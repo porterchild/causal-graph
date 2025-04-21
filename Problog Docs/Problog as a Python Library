@@ -1,0 +1,206 @@
+ProbLog as a Python library¶
+ProbLog is mostly written in Python (except the knowledge compilation step, which is in C). This allows us to import ProbLog as a Python package. In this document we show some examples to illustrate this usage.
+
+ProbLog as a string
+A ProbLog program can be composed as a string and fed into ProbLog:
+
+from problog.program import PrologString
+from problog.core import ProbLog
+from problog import get_evaluatable
+
+p = PrologString("""
+coin(c1). coin(c2).
+0.4::heads(C); 0.6::tails(C) :- coin(C).
+win :- heads(C).
+evidence(heads(c1), false).
+query(win).
+""")
+
+get_evaluatable().create_from(p).evaluate()
+{win: 0.4000000000000001}
+In order to evaluate a ProbLog program we need to compile it into a structure on which we can perform weighted model counting (e.g. d-DNNF or SDD). ProbLog offers different options for this, which can differ based on the operating system. The function get_evaluatable() provides a platform independent way of selecting the most suitable available structure.
+
+This function call can also be replaced directly by a suitable class (e.g. problog.nnf_formula.NNF or problog.sdd_formula.SDD).
+
+Going step-by-step
+Most data structure classes in ProbLog support the method class.create_from(object) which automatically takes the necessery steps to transform the given object in to an object of the class. The statement get_evaluatable().create_from(p).evaluate() can be split into the following intermediate steps:
+
+from problog.program import PrologString
+from problog.formula import LogicFormula, LogicDAG
+from problog.logic import Term
+from problog.ddnnf_formula import DDNNF
+from problog.cnf_formula import CNF
+
+p = PrologString("""
+coin(c1). coin(c2).
+0.4::heads(C); 0.6::tails(C) :- coin(C).
+win :- heads(C).
+evidence(heads(c1), false).
+query(win).
+""")
+
+lf = LogicFormula.create_from(p)   # ground the program
+dag = LogicDAG.create_from(lf)     # break cycles in the ground program
+cnf = CNF.create_from(dag)         # convert to CNF
+ddnnf = DDNNF.create_from(cnf)       # compile CNF to ddnnf
+
+ddnnf.evaluate()
+{win: 0.4}
+Controlling the ProbLog chain
+The previous code is still high-level. We can also use ProbLog at a lower level.
+
+First, let us look at the Prolog-level, that is, grounding and (deterministic) querying of a model.
+
+from problog.engine import DefaultEngine
+from problog.logic import Term
+
+p = PrologString("""
+coin(c1). coin(c2).
+0.4::heads(C); 0.6::tails(C) :- coin(C).
+win :- heads(C).
+evidence(heads(c1), false).
+query(win).
+""")
+
+engine = DefaultEngine()
+
+db = engine.prepare(p)    # This compiles the Prolog model into an internal format.
+                          # This step is optional, but it might be worthwhile if you
+                          #  want to query the same model multiple times.
+We can perform queries on the logic part of the model (ignoring the probabilities) with the Engine.query method.
+
+query1 = Term('heads', None)   # query for 'heads(_)'
+results = engine.query(db, query1)
+results
+[(c1,), (c2,)]
+This returns a list of arguments to the query term. We can construct the complete result terms with
+
+[query1(*args) for args in results]
+[heads(c1), heads(c2)]
+In order to query the probabilistic model, we need to take more steps. The first step is grounding the logic program using the method Engine.ground_all. This will generate a ground program (problog.formula.LogicFormula) containing all queries and evidence specified in the model.
+
+lf = engine.ground_all(db)
+print (lf)
+1: atom(identifier=(3, (c1,), 0), probability=0.4, group=(3, (c1,)), name=heads(c1), source=None)
+2: atom(identifier=(3, (c2,), 0), probability=0.4, group=(3, (c2,)), name=choice(3,0,heads(c2),c2), source=None)
+3: disj(children=(1, 2), name=win)
+Queries :
+* win : 3 [query]
+Evidence :
+* heads(c1) : -1
+This ground program can be passed to the next phase of the ProbLog pipeline.
+
+The function ground_all accepts several parameters:
+
+target: provide an existing LogicFormula (or subclass) This allows extending a previous grounding, or use a different type of output formula.
+queries: provide a list of queries (as Term objects) These queries replace the queries specified in the model.
+evidence: provide a list of evidence (as tuples of (Term, bool)) These replace the evidence specified in the model.
+evidence_term = Term('heads', Term('c1'))
+lf = engine.ground_all(db, evidence=[(evidence_term, True)])
+print ('With evidence that heads(c1) is true: %s' % get_evaluatable().create_from(lf).evaluate())
+
+query_term = Term('tails', Term('c1'))
+lf = engine.ground_all(db, queries=[query_term], evidence=[])
+print ('Query tails(c1) (no evidence): %s' % get_evaluatable().create_from(lf).evaluate())
+With evidence that heads(c1) is true: {win: 1.0}
+Query tails(c1) (no evidence): {tails(c1): 0.6}
+These additional parameters can also be passed to the create_from method.
+
+It is possible to add additional clauses to the database on-the-fly. You can either add clauses to the database directly:
+
+m1 = """
+0.3::a(1).
+query(a(X)).
+"""
+db = DefaultEngine().prepare(PrologString(m1))
+print (get_evaluatable().create_from(db).evaluate())
+
+m2 = """
+0.4::a(2).
+"""
+for statement in PrologString(m2):
+    db += statement
+
+print (get_evaluatable().create_from(db).evaluate())
+{a(1): 0.3}
+{a(1): 0.3, a(2): 0.4}
+Or add them to an extension of the database.
+
+m1 = """
+0.3::a(1).
+query(a(X)).
+"""
+db = DefaultEngine().prepare(PrologString(m1))
+print (get_evaluatable().create_from(db).evaluate())
+
+m2 = """
+0.4::a(2).
+"""
+db2 = db.extend()
+for statement in PrologString(m2):
+    db2 += statement
+
+print (get_evaluatable().create_from(db2).evaluate())
+print (get_evaluatable().create_from(db).evaluate())
+{a(1): 0.3}
+{a(1): 0.3, a(2): 0.4}
+{a(1): 0.3}
+Here we made an extension of database db called db2. This new database contains all the clauses of the original (without copying them). We can discard any modifications by simply discarding db2.
+
+ProbLog as Python datastructures
+Instead of feeding a string and using the ProbLog syntax, it is also possible to create the program using Python datastructures:
+
+from problog.program import SimpleProgram
+from problog.logic import Constant,Var,Term,AnnotatedDisjunction
+
+coin,heads,tails,win,query = Term('coin'),Term('heads'),Term('tails'),Term('win'),Term('query')
+C = Var('C')
+p = SimpleProgram()
+p += coin(Constant('c1'))
+p += coin(Constant('c2'))
+p += AnnotatedDisjunction([heads(C,p=0.4), tails(C,p=0.6)], coin(C))
+p += (win << heads(C))
+p += query(win)
+
+get_evaluatable().create_from(p).evaluate()
+{win: 0.6400000000000001}
+The << syntax is used to build a Prolog rule.
+
+Call Python definitions from ProbLog
+It is also possible to call Python definition from ProbLog while grounding a program.
+
+Python definitions can be made discoverable for ProbLog by using a problog_export decorator. Suppose that you create a file mylib.py that contains the following Python code:
+
+from problog.extern import problog_export
+
+@problog_export('+str', '+str', '-str')
+def concat_str(arg1, arg2):
+    return arg1 + arg2
+
+
+@problog_export('+int', '+int', '-int')
+def int_plus(arg1, arg2):
+    return arg1 + arg2
+
+
+@problog_export('+list', '+list', '-list')
+def concat_list(arg1, arg2):
+    return arg1 + arg2
+These functions are discoverable by ProbLog after using a :- use_module('mylib.py'). rule in ProbLog. Afterwards, we can use them as regular predicates:
+
+p = PrologString("""
+:- use_module('mylib.py').
+
+query(concat_str(a,b,Z)).
+query(concat_list([a,b],[c,d],Z)).
+query(int_plus(1,2,Z)).
+query(concat_list([a,b],[c],Y)).
+""")
+
+result = get_evaluatable().create_from(p).evaluate()
+for it in result.items() :
+    print ('%s : %s' % (it))
+concat_list([a, b],[c, d],[a, b, c, d]) : 1.0
+concat_list([a, b],[c],[a, b, c]) : 1.0
+concat_str(a,b,ab) : 1.0
+int_plus(1,2,3) : 1.0

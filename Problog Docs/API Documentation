@@ -1,0 +1,2896 @@
+API Documentation
+6.1. problog.logic - Basic logic
+This module contains basic logic constructs.
+
+A Term can be:
+a function (see Term)
+a variable (see Var)
+a constant (see Constant)
+Four functions are handled separately:
+conjunction (see And)
+disjunction (see Or)
+negation (see Not)
+clause (see Clause)
+Syntactic sugar
+
+Clauses can be constructed by virtue of overloading of Python operators:
+
+Prolog	Python	English
+:-	<<	clause
+,	&	and
+;	|	or
+\+	~	not
+Warning Due to Python’s operator priorities, the body of the clause has to be between parentheses.
+Example:
+
+from problog.logic import Var, Term
+
+# Functors (arguments will be added later)
+ancestor = Term('anc')
+parent = Term('par')
+
+# Literals
+leo3 = Term('leo3')
+al2 = Term('al2')
+phil = Term('phil')
+
+# Variables
+X = Var('X')
+Y = Var('Y')
+Z = Var('Z')
+
+# Clauses
+c1 = ( ancestor(X,Y) << parent(X,Y) )
+c2 = ( ancestor(X,Y) << ( parent(X,Z) & ancestor(Z,Y) ) )
+c3 = ( parent( leo3, al2 ) )
+c4 = ( parent( al2, phil ) )
+term2str(term)[source]
+Convert a term argument to string.
+
+Parameters:	term (Term | None | int) – the term to convert
+Returns:	string representation of the given term where None is converted to ‘_’.
+Return type:	str
+list2term(lst)[source]
+Transform a Python list of terms in to a Prolog Term.
+
+Parameters:	lst (list of Term) – list of Terms
+Returns:	Term representing a Prolog list
+Return type:	Term
+term2list(term, deep=True)[source]
+Transform a Prolog list to a Python list of terms.
+
+Parameters:	term (Term) – term representing a fixed length Prolog list
+Raises:	ValueError – given term is not a valid fixed length Prolog list
+Returns:	Python list containing the elements from the Prolog list
+Return type:	list of Term
+is_ground(*terms)[source]
+Test whether a any of given terms contains a variable. :param terms: list of terms to test for the presence of variables :param terms: tuple of (Term | int | None) :return: True if none of the arguments contains any variables.
+
+is_variable(term)[source]
+Test whether a Term represents a variable.
+
+Parameters:	term – term to check
+Returns:	True if the expression is a variable
+is_list(term)[source]
+Test whether a Term is a list.
+
+Parameters:	term – term to check
+Returns:	True if the term is a list.
+class Term(functor, *args, **kwdargs)[source]
+Bases: object
+
+A first order term, for example ‘p(X,Y)’. :param functor: the functor of the term (‘p’ in the example) :type functor: str :param args: the arguments of the Term (‘X’ and ‘Y’ in the example) :type args: Term | None | int :param kwdargs: additional arguments; currently ‘p’ (probability) and ‘location’ (character position in input)
+
+functor
+Term functor
+
+args
+Term arguments
+
+arity
+Number of arguments
+
+value
+Value of the Term obtained by computing the function is represents
+
+compute_value(functions=None)[source]
+Compute value of the Term by computing the function it represents.
+
+Parameters:	functions – dictionary of user-defined functions
+Returns:	value of the Term
+signature
+Term’s signature functor/arity
+
+apply(subst)[source]
+Apply the given substitution to the variables in the term.
+
+Parameters:	subst (an object with a __getitem__ method) – A mapping from variable names to something else
+Raises:	whatever subst.__getitem__ raises
+Returns:	a new Term with all variables replaced by their values from the given substitution
+Return type:	Term
+apply_term(subst)[source]
+Apply the given substitution to all (sub)terms in the term.
+
+Parameters:	subst (an object with a __getitem__ method) – A mapping from variable names to something else
+Raises:	whatever subst.__getitem__ raises
+Returns:	a new Term with all variables replaced by their values from the given substitution
+Return type:	Term
+with_args(*args, **kwdargs)[source]
+Creates a new Term with the same functor and the given arguments.
+
+Parameters:	
+args (tuple of (Term | int | None)) – new arguments for the term
+kwdargs (p=Constant | p=Var | p=float) – keyword arguments for the term
+Returns:	
+a new term with the given arguments
+
+Return type:	
+Term
+
+with_probability(p=None)[source]
+Creates a new Term with the same functor and arguments but with a different probability.
+
+Parameters:	p – new probability (None clears the probability)
+Returns:	copy of the Term
+is_var()[source]
+Checks whether this Term represents a variable.
+
+is_scope_term()[source]
+Checks whether the current term is actually a term inside a scope
+
+is_constant()[source]
+Checks whether this Term represents a constant.
+
+is_ground()[source]
+Checks whether the term contains any variables.
+
+is_negated()[source]
+Checks whether the term represent a negated term.
+
+variables(exclude_local=False)[source]
+Extract the variables present in the term.
+
+Returns:	set of variables
+Return type:	problog.util.OrderedSet
+class AggTerm(*args, **kwargs)[source]
+Bases: problog.logic.Term
+
+class Var(name, location=None, **kwdargs)[source]
+Bases: problog.logic.Term
+
+A Term representing a variable.
+
+Parameters:	name (str) – name of the variable
+name
+Name of the variable
+
+compute_value(functions=None)[source]
+Compute value of the Term by computing the function it represents.
+
+Parameters:	functions – dictionary of user-defined functions
+Returns:	value of the Term
+is_var()[source]
+Checks whether this Term represents a variable.
+
+is_ground()[source]
+Checks whether the term contains any variables.
+
+class Constant(value, location=None, **kwdargs)[source]
+Bases: problog.logic.Term
+
+A constant.
+
+Parameters:	value (str, float or int.) – the value of the constant
+compute_value(functions=None)[source]
+Compute value of the Term by computing the function it represents.
+
+Parameters:	functions – dictionary of user-defined functions
+Returns:	value of the Term
+is_constant()[source]
+Checks whether this Term represents a constant.
+
+is_string()[source]
+Check whether this constant is a string.
+
+Returns:	true if the value represents a string
+Return type:	bool
+is_float()[source]
+Check whether this constant is a float.
+
+Returns:	true if the value represents a float
+Return type:	bool
+is_integer()[source]
+Check whether this constant is an integer.
+
+Returns:	true if the value represents an integer
+Return type:	bool
+class Object(value, location=None, **kwdargs)[source]
+Bases: problog.logic.Term
+
+A wrapped object.
+
+Parameters:	value – the wrapped object
+compute_value(functions=None)[source]
+Compute value of the Term by computing the function it represents.
+
+Parameters:	functions – dictionary of user-defined functions
+Returns:	value of the Term
+is_constant()[source]
+Checks whether this Term represents a constant.
+
+is_string()[source]
+Check whether this constant is a string.
+
+Returns:	true if the value represents a string
+Return type:	bool
+is_float()[source]
+Check whether this constant is a float.
+
+Returns:	true if the value represents a float
+Return type:	bool
+is_integer()[source]
+Check whether this constant is an integer.
+
+Returns:	true if the value represents an integer
+Return type:	bool
+class Clause(head, body, **kwdargs)[source]
+Bases: problog.logic.Term
+
+A clause.
+
+class AnnotatedDisjunction(heads, body, **kwdargs)[source]
+Bases: problog.logic.Term
+
+An annotated disjunction.
+
+class Or(op1, op2, **kwdargs)[source]
+Bases: problog.logic.Term
+
+classmethod from_list(lst)[source]
+Create a disjunction based on the terms in the list.
+
+Parameters:	lst – list of terms
+Returns:	disjunction over the given terms
+to_list()[source]
+Extract the terms of the disjunction into the list.
+
+Returns:	list of disjuncts
+with_args(*args)[source]
+Creates a new Term with the same functor and the given arguments.
+
+Parameters:	
+args (tuple of (Term | int | None)) – new arguments for the term
+kwdargs (p=Constant | p=Var | p=float) – keyword arguments for the term
+Returns:	
+a new term with the given arguments
+
+Return type:	
+Term
+
+class And(op1, op2, location=None, **kwdargs)[source]
+Bases: problog.logic.Term
+
+classmethod from_list(lst)[source]
+Create a conjunction based on the terms in the list.
+
+Parameters:	lst – list of terms
+Returns:	conjunction over the given terms
+to_list()[source]
+Extract the terms of the conjunction into the list.
+
+Returns:	list of disjuncts
+with_args(*args)[source]
+Creates a new Term with the same functor and the given arguments.
+
+Parameters:	
+args (tuple of (Term | int | None)) – new arguments for the term
+kwdargs (p=Constant | p=Var | p=float) – keyword arguments for the term
+Returns:	
+a new term with the given arguments
+
+Return type:	
+Term
+
+class Not(functor, child, location=None, **kwdargs)[source]
+Bases: problog.logic.Term
+
+is_negated()[source]
+Checks whether the term represent a negated term.
+
+unquote(s)[source]
+Strip single quotes from the string.
+
+Parameters:	s – string to remove quotes from
+Returns:	string with quotes removed
+compute_function(func, args, extra_functions=None)[source]
+Compute the result of an arithmetic function given by a functor and a list of arguments.
+
+Parameters:	
+func – functor
+args ((list | tuple) of (Term | int | None)) – arguments
+extra_functions – additional user-defined functions
+Type:	
+basestring
+
+Raises:	
+ArithmeticError if the function is unknown or if an error occurs while computing it
+
+Returns:	
+result of the function
+
+Return type:	
+Constant
+
+exception InstantiationError(message, location=None, **extra)[source]
+Bases: problog.errors.GroundingError
+
+Error used when performing arithmetic with a non-ground term.
+
+exception ArithmeticError(message, location=None, **extra)[source]
+Bases: problog.errors.GroundingError
+
+Error used when an error occurs during evaluation of an arithmetic expression.
+
+6.2. problog.formula - Ground programs
+Data structures for propositional logic.
+
+class BaseFormula[source]
+Bases: problog.core.ProbLogObject
+
+Defines a basic logic formula consisting of nodes in some logical relation.
+
+Each node is represented by a key. This key has the following properties:
+None indicates false
+0 indicates true
+a number larger than 0 indicates a positive node
+the key -a with a a number larger than 0 indicates the negation of a
+This data structure also support weights on nodes, names on nodes and constraints.
+
+atomcount
+Number of atoms in the formula.
+
+get_weights()[source]
+Get weights of the atoms in the formula.
+
+Returns:	dictionary of weights
+Return type:	dict[int, Term]
+set_weights(weights)[source]
+Set weights of the atoms in the formula.
+
+Parameters:	weights (dict[int, Term]) – dictionary of weights
+get_weight(key, semiring)[source]
+Get actual value of the node with the given key according to the given semiring.
+
+Parameters:	
+key – key of the node (can be TRUE, FALSE or positive or negative)
+semiring (problog.evaluator.Semiring) – semiring to use to transform stored weight term into actual value
+Returns:	
+actual value of the weight of the given node
+
+extract_weights(semiring, weights=None)[source]
+Extracts the positive and negative weights for all atoms in the data structure.
+
+Atoms with weight set to neutral will get weight (semiring.one(), semiring.one()).
+If the weights argument is given, it completely replaces the formula’s weights.
+All constraints are applied to the weights.
+To specify positive and negative literal of an atom you can pass a tuple and handle it in the semiring functions pos_value and neg_value
+(4,5)::a. 4 is the postive weight and 5 the negative.
+Parameters:	
+semiring – semiring that determines the interpretation of the weights
+weights (dict[(Term | int), any]) – dictionary of { node name : weight } or { node id : weight} that overrides the builtin weights, the given weights must be in external representation.
+Returns:	
+dictionary { key: (positive weight, negative weight) } where the weights are in internal representation.
+
+Return type:	
+dict[int, tuple[any,any]]
+
+add_name(name, key, label=None, keep_name=False)[source]
+Add a name to the given node.
+
+Parameters:	
+name (Term) – name of the node
+key (int | bool) – key of the node
+label – type of label (one of LABEL_*)
+get_node_by_name(name)[source]
+Get node corresponding to the given name.
+
+Parameters:	name – name of the node to find
+Returns:	key of the node
+Raises:	KeyError if no node with the given name was found
+add_query(name, key, keep_name=False)[source]
+Add a query name.
+
+Same as add_name(name, key, self.LABEL_QUERY).
+
+Parameters:	
+name – name of the query
+key – key of the query node
+add_evidence(name, key, value, keep_name=False)[source]
+Add an evidence name.
+
+Same as add_name(name, key, self.LABEL_EVIDENCE_???).
+
+Parameters:	
+name – name of the query
+key – key of the query node
+value – value of the evidence (True, False or None)
+clear_evidence()[source]
+Remove all evidence.
+
+clear_queries()[source]
+Remove all evidence.
+
+clear_labeled(label)[source]
+Remove all evidence.
+
+get_names(label=None)[source]
+Get a list of all node names in the formula.
+
+Parameters:	label – restrict to given label. If not set, all nodes are returned.
+Returns:	list of all nodes names (of the requested type) as a list of tuples (name, key)
+get_names_with_label()[source]
+Get a list of all node names in the formula with their label type.
+
+Returns:	list of all nodes names with their type
+queries()[source]
+Get a list of all queries.
+
+Returns:	get_names(LABEL_QUERY)
+labeled()[source]
+Get a list of all query-like labels.
+
+Returns:	
+evidence()[source]
+Get a list of all determined evidence. Keys are negated for negative evidence. Unspecified evidence (value None) is not included.
+
+Returns:	list of tuples (name, key) for positive and negative evidence
+evidence_all()[source]
+Get a list of all evidence (including undetermined).
+
+Returns:	list of tuples (name, key, value) where value can be -1, 0 or 1
+is_true(key)[source]
+Does the key represent deterministic True?
+
+Parameters:	key – key
+Returns:	key == self.TRUE
+is_false(key)[source]
+Does the key represent deterministic False?
+
+Parameters:	key – key
+Returns:	key == self.FALSE
+is_probabilistic(key)[source]
+Does the key represent a probabilistic node?
+
+Parameters:	key – key
+Returns:	not is_true(key) and not is_false(key)
+negate(key)[source]
+Negate the key.
+
+For TRUE, returns FALSE; For FALSE, returns TRUE; For x returns -x
+
+Parameters:	key – key to negate
+Returns:	negation of the key
+constraints()[source]
+Return the list of constraints.
+
+Returns:	list of constraints
+add_constraint(constraint)[source]
+Add a constraint
+
+Parameters:	constraint (problog.constraint.Constraint) – constraint to add
+class atom(identifier, probability, group, name, source, is_extra)
+Bases: tuple
+
+group
+Alias for field number 2
+
+identifier
+Alias for field number 0
+
+is_extra
+Alias for field number 5
+
+name
+Alias for field number 3
+
+probability
+Alias for field number 1
+
+source
+Alias for field number 4
+
+class conj(children, name)
+Bases: tuple
+
+children
+Alias for field number 0
+
+name
+Alias for field number 1
+
+class disj(children, name)
+Bases: tuple
+
+children
+Alias for field number 0
+
+name
+Alias for field number 1
+
+class LogicFormula(auto_compact=True, avoid_name_clash=False, keep_order=False, use_string_names=False, keep_all=False, propagate_weights=None, max_arity=0, keep_duplicates=False, keep_builtins=False, hide_builtins=False, database=None, **kwdargs)[source]
+Bases: problog.formula.BaseFormula
+
+A logic formula is a data structure that is used to represent generic And-Or graphs. It can typically contain three types of nodes:
+
+atom ( or terminal)
+and (compound)
+or (compound)
+The compound nodes contain a list of children which point to other nodes in the formula. These pointers can be positive or negative.
+
+In addition to the basic logical structure of the formula, it also maintains a table of labels, which can be used to easily retrieve certain nodes. These labels typically contain the literals from the original program.
+
+Upon addition of new nodes, the logic formula can perform certain optimizations, for example, by simplifying nodes or by reusing existing nodes.
+
+add_name(name, key, label=None, keep_name=False)[source]
+Associates a name to the given node identifier.
+
+Parameters:	
+name – name of the node
+key – id of the node
+label – type of node (see LogicFormula.LABEL_*)
+keep_name – keep name of node if it exists
+is_trivial()[source]
+Test whether the formula contains any logical construct.
+
+Returns:	False if the formula only contains atoms.
+get_next_atom_identifier()[source]
+Get a unique identifier that can - and has not - been used to add a new atom. :return: A next unique identifier to use when adding new atoms (self.add_atom(identifier=..))
+
+add_atom(identifier, probability, group=None, name=None, source=None, cr_extra=True, is_extra=False)[source]
+Add an atom to the formula.
+
+Parameters:	
+identifier – a unique identifier for the atom
+probability – probability of the atom
+group – a group identifier that identifies mutually exclusive atoms (or None if no constraint)
+name – name of the new node
+cr_extra – When required, create an extra_node for the constraint group.
+Returns:	
+the identifiers of the node in the formula (returns self.TRUE for deterministic atoms)
+
+This function has the following behavior :
+
+If probability is set to None then the node is considered to be deterministically true and the function will return TRUE.
+If a node already exists with the given identifier, the id of that node is returned.
+If group is given, a mutual exclusivity constraint is added for all nodes sharing the same group.
+To add an explicitly present deterministic node you can set the probability to True.
+add_and(components, key=None, name=None, compact=None)[source]
+Add a conjunction to the logic formula.
+
+Parameters:	
+components – a list of node identifiers that already exist in the logic formula.
+key – preferred key to use
+name – name of the node
+Returns:	
+the key of the node in the formula (returns 0 for deterministic atoms)
+
+add_or(components, key=None, readonly=True, name=None, placeholder=False, compact=None)[source]
+Add a disjunction to the logic formula.
+
+Parameters:	
+components – a list of node identifiers that already exist in the logic formula.
+key – preferred key to use
+readonly – indicates whether the node should be modifiable. This will allow additional disjunct to be added without changing the node key. Modifiable nodes are less optimizable.
+name – name of the node
+Returns:	
+the key of the node in the formula (returns 0 for deterministic atoms)
+
+Return type:	
+int
+
+By default, all nodes in the data structure are immutable (i.e. readonly). This allows the data structure to optimize nodes, but it also means that cyclic formula can not be stored because the identifiers of all descendants must be known add creation time.
+
+By setting readonly to False, the node is made mutable and will allow adding disjunct later using the addDisjunct() method. This may cause the data structure to contain superfluous nodes.
+
+add_disjunct(key, component)[source]
+Add a component to the node with the given key.
+
+Parameters:	
+key – id of the node to update
+component – the component to add
+Returns:	
+key
+
+Raises:	
+ValueError if key points to an invalid node
+
+This may only be called with a key that points to a disjunctive node or TRUE.
+
+add_not(component)[source]
+Returns the key to the negation of the node.
+
+Parameters:	component – the node to negate
+get_node(key)[source]
+Get the content of the node with the given key.
+
+Parameters:	key (int > 0) – key of the node
+Returns:	content of the node
+constraints()[source]
+Returns a list of all constraints.
+
+has_evidence_values()[source]
+Checks whether the current formula contains information for evidence propagation.
+
+get_evidence_values()[source]
+Retrieves evidence propagation information.
+
+get_evidence_value(key)[source]
+Get value of the given node based on evidence propagation.
+
+Parameters:	key – key of the node
+Returns:	value of the node (key, TRUE or FALSE)
+set_evidence_value(key, value)[source]
+Set value of the given node based on evidence propagation.
+
+Parameters:	
+key – key of the node
+value – value of the node
+propagate(nodeids, current=None)[source]
+Propagate the value of the given node (true if node is positive, false if node is negative) The propagation algorithm is not complete.
+
+Parameters:	
+nodeids – evidence nodes to set (> 0 means true, < 0 means false)
+current – current set of nodes with deterministic value
+Returns:	
+dictionary of nodes with deterministic value
+
+to_prolog()[source]
+Convert the Logic Formula to a Prolog program.
+
+To make this work correctly some flags should be set on the engine and LogicFormula prior to grounding. The following code should be used:
+
+pl = problog.program.PrologFile(input_file)
+problog.formula.LogicFormula.create_from(pl, avoid_name_clash=True, keep_order=True, label_all=True)
+prologfile = gp.to_prolog()
+Returns:	Prolog program
+Return type:	str
+get_name(key)[source]
+Get the name of the given node.
+
+Parameters:	key – key of the node
+Returns:	name of the node
+Return type:	Term
+enumerate_clauses(relevant_only=True)[source]
+Enumerate the clauses of this logic formula.
+Clauses are represented as (head, [body]).
+Parameters:	relevant_only – only list clauses that are part of the ground program for a query or evidence
+Returns:	iterator of clauses
+to_dot(not_as_node=True, nodeprops=None)[source]
+Write out in GraphViz (dot) format.
+
+Parameters:	
+not_as_node – represent negation as a node
+nodeprops – additional properties for nodes
+Returns:	
+string containing dot representation
+
+class LogicDAG(auto_compact=True, **kwdargs)[source]
+Bases: problog.formula.LogicFormula
+
+A propositional logic formula without cycles.
+
+class LogicNNF(auto_compact=True, **kwdargs)[source]
+Bases: problog.formula.LogicDAG, problog.evaluator.Evaluatable
+
+A propositional formula in NNF form (i.e. only negation on facts).
+
+copy_node_from(source, index, translate=None)[source]
+Copy a node with transformation to Negation Normal Form (only negation on facts).
+
+class DeterministicLogicFormula(**kwdargs)[source]
+Bases: problog.formula.LogicFormula
+
+A deterministic logic formula.
+
+add_atom(identifier, probability, group=None, name=None, source=None)[source]
+Add an atom to the formula.
+
+Parameters:	
+identifier – a unique identifier for the atom
+probability – probability of the atom
+group – a group identifier that identifies mutually exclusive atoms (or None if no constraint)
+name – name of the new node
+cr_extra – When required, create an extra_node for the constraint group.
+Returns:	
+the identifiers of the node in the formula (returns self.TRUE for deterministic atoms)
+
+This function has the following behavior :
+
+If probability is set to None then the node is considered to be deterministically true and the function will return TRUE.
+If a node already exists with the given identifier, the id of that node is returned.
+If group is given, a mutual exclusivity constraint is added for all nodes sharing the same group.
+To add an explicitly present deterministic node you can set the probability to True.
+class ClauseDB(builtins=None, parent=None)[source]
+Bases: problog.program.LogicProgram
+
+Compiled logic program.
+
+A logic program is compiled into a table of instructions. The types of instructions are:
+
+define( functor, arity, defs )
+Pointer to all definitions of functor/arity. Definitions can be: fact, clause or adc.
+clause( functor, arguments, bodynode, varcount )
+Single clause. Functor is the head functor, Arguments are the head arguments. Body node is a pointer to the node representing the body. Var count is the number of variables in head and body.
+fact( functor, arguments, probability )
+Single fact.
+adc( functor, arguments, bodynode, varcount, parent )
+Single annotated disjunction choice. Fields have same meaning as with clause, parent_node points to the parent ad node.
+ad( childnodes )
+Annotated disjunction group. Child nodes point to the adc nodes of the clause.
+call( functor, arguments, defnode )
+Body literal with call to clause or builtin. Arguments contains the call arguments, definition node is the pointer to the definition node of the given functor/arity.
+conj( childnodes )
+Logical and. Currently, only 2 children are supported.
+disj( childnodes )
+Logical or. Currently, only 2 children are supported.
+neg( childnode )
+Logical not.
+get_node(index)[source]
+Get the instruction node at the given index.
+
+Parameters:	index (int) – index of the node to retrieve
+Returns:	requested node
+Return type:	tuple
+Raises:	IndexError – the given index does not point to a node
+find(head)[source]
+Find the define node corresponding to the given head.
+
+Parameters:	head (basic.Term) – clause head to match
+Returns:	location of the clause node in the database, returns None if no such node exists
+Return type:	int or None
+add_clause(clause, scope=None)[source]
+Add a clause to the database.
+
+Parameters:	clause (Clause) – Clause to add
+Returns:	location of the definition node in the database
+Return type:	int
+add_fact(term, scope=None)[source]
+Add a fact to the database. :param term: fact to add :type term: Term :return: position of the definition node in the database :rtype: int
+
+iter_raw()[source]
+Iterate over clauses of model as represented in the database i.e. with choice facts and without annotated disjunctions.
+
+create_function(functor, arity)[source]
+Create a Python function that can be used to query a specific predicate on this database.
+
+Parameters:	
+functor – functor of the predicate
+arity – arity of the predicate (the function will take arity - 1 arguments
+Returns:	
+a Python callable
+
+exception ConsultError(message, location)[source]
+Bases: problog.errors.GroundingError
+
+Error during consult
+
+exception AccessError(message, location=None, **extra)[source]
+Bases: problog.errors.GroundingError
+
+class ClauseIndex(parent, arity)[source]
+Bases: list
+
+append(item)[source]
+Append object to the end of the list.
+
+6.3. problog.cycles - Cycle-breaking
+Cycle breaking in propositional formulae.
+
+break_cycles(source, target, translation=None, keep_named=False, **kwdargs)[source]
+Break cycles in the source logic formula.
+
+Parameters:	
+source – logic formula with cycles
+target – target logic formula without cycles
+keep_named – if true, then named nodes will be preserved after cycle breaking
+kwdargs – additional arguments (ignored)
+Returns:	
+target
+
+6.4. problog.constraint - Propositional constraints
+Data structures for specifying propositional constraints.
+
+class Constraint[source]
+Bases: object
+
+A propositional constraint.
+
+get_nodes()[source]
+Get all nodes involved in this constraint.
+
+update_weights(weights, semiring)[source]
+Update the weights in the given dictionary according to the constraints.
+
+Parameters:	
+weights – dictionary of weights (see result of LogicFormula.extract_weights())
+semiring – semiring to use for weight transformation
+is_true()[source]
+Checks whether the constraint is trivially true.
+
+is_false()[source]
+Checks whether the constraint is trivially false.
+
+is_nontrivial()[source]
+Checks whether the constraint is non-trivial.
+
+as_clauses()[source]
+Represent the constraint as a list of clauses (CNF form).
+
+Returns:	list of clauses where each clause is represent as a list of node keys
+Return type:	list[list[int]]
+copy(rename=None)[source]
+Copy this constraint while applying the given node renaming.
+
+Parameters:	rename – node rename map (or None if no rename is required)
+Returns:	copy of the current constraint
+class ConstraintAD(group)[source]
+Bases: problog.constraint.Constraint
+
+Annotated disjunction constraint (mutually exclusive with weight update).
+
+get_nodes()[source]
+Get all nodes involved in this constraint.
+
+is_true()[source]
+Checks whether the constraint is trivially true.
+
+is_false()[source]
+Checks whether the constraint is trivially false.
+
+add(node, formula, cr_extra=True)[source]
+Add a node to the constraint from the given formula.
+
+Parameters:	
+node – node to add
+formula – formula from which the node is taken
+cr_extra – Create an extra_node when required (when it is None and this is the second atom of the group).
+Returns:	
+value of the node after constraint propagation
+
+as_clauses()[source]
+Represent the constraint as a list of clauses (CNF form).
+
+Returns:	list of clauses where each clause is represent as a list of node keys
+Return type:	list[list[int]]
+update_weights(weights, semiring)[source]
+Update the weights in the given dictionary according to the constraints.
+
+Parameters:	
+weights – dictionary of weights (see result of LogicFormula.extract_weights())
+semiring – semiring to use for weight transformation
+copy(rename=None)[source]
+Copy this constraint while applying the given node renaming.
+
+Parameters:	rename – node rename map (or None if no rename is required)
+Returns:	copy of the current constraint
+check(values)[source]
+Check the constraint
+
+Parameters:	values – dictionary of values for nodes
+Returns:	True if constraint succeeds, False otherwise
+propagate(values, weights, node=None)[source]
+Returns - True: constraint satisfied - False: constraint violated - None: unknown
+
+class ClauseConstraint(nodes)[source]
+Bases: problog.constraint.Constraint
+
+A constraint specifying that a given clause should be true.
+
+as_clauses()[source]
+Represent the constraint as a list of clauses (CNF form).
+
+Returns:	list of clauses where each clause is represent as a list of node keys
+Return type:	list[list[int]]
+copy(rename=None)[source]
+Copy this constraint while applying the given node renaming.
+
+Parameters:	rename – node rename map (or None if no rename is required)
+Returns:	copy of the current constraint
+class TrueConstraint(node)[source]
+Bases: problog.constraint.Constraint
+
+A constraint specifying that a given node should be true.
+
+get_nodes()[source]
+Get all nodes involved in this constraint.
+
+as_clauses()[source]
+Represent the constraint as a list of clauses (CNF form).
+
+Returns:	list of clauses where each clause is represent as a list of node keys
+Return type:	list[list[int]]
+copy(rename=None)[source]
+Copy this constraint while applying the given node renaming.
+
+Parameters:	rename – node rename map (or None if no rename is required)
+Returns:	copy of the current constraint
+6.5. problog.evaluator - Commone interface for evaluation
+Provides common interface for evaluation of weighted logic formulas.
+
+exception OperationNotSupported[source]
+Bases: problog.errors.ProbLogError
+
+class Semiring[source]
+Bases: object
+
+Interface for weight manipulation.
+
+A semiring is a set R equipped with two binary operations ‘+’ and ‘x’.
+
+The semiring can use different representations for internal values and external values. For example, the LogProbability semiring uses probabilities [0, 1] as external values and uses the logarithm of these probabilities as internal values.
+
+Most methods take and return internal values. The execeptions are:
+
+value, pos_value, neg_value: transform an external value to an internal value
+result: transform an internal to an external value
+result_zero, result_one: return an external value
+one()[source]
+Returns the identity element of the multiplication.
+
+is_one(value)[source]
+Tests whether the given value is the identity element of the multiplication.
+
+zero()[source]
+Returns the identity element of the addition.
+
+is_zero(value)[source]
+Tests whether the given value is the identity element of the addition.
+
+plus(a, b)[source]
+Computes the addition of the given values.
+
+times(a, b)[source]
+Computes the multiplication of the given values.
+
+negate(a)[source]
+Returns the negation. This operation is optional. For example, for probabilities return 1-a.
+
+Raises:	OperationNotSupported – if the semiring does not support this operation
+value(a)[source]
+Transform the given external value into an internal value.
+
+result(a, formula=None)[source]
+Transform the given internal value into an external value.
+
+normalize(a, z)[source]
+Normalizes the given value with the given normalization constant.
+
+For example, for probabilities, returns a/z.
+
+Raises:	OperationNotSupported – if z is not one and the semiring does not support this operation
+pos_value(a, key=None)[source]
+Extract the positive internal value for the given external value.
+
+neg_value(a, key=None)[source]
+Extract the negative internal value for the given external value.
+
+result_zero()[source]
+Give the external representation of the identity element of the addition.
+
+result_one()[source]
+Give the external representation of the identity element of the multiplication.
+
+is_dsp()[source]
+Indicates whether this semiring requires solving a disjoint sum problem.
+
+is_nsp()[source]
+Indicates whether this semiring requires solving a neutral sum problem.
+
+in_domain(a)[source]
+Checks whether the given (internal) value is valid.
+
+true(key=None)[source]
+Handle weight for deterministically true.
+
+false(key=None)[source]
+Handle weight for deterministically false.
+
+to_evidence(pos_weight, neg_weight, sign)[source]
+Converts the pos. and neg. weight (internal repr.) of a literal into the case where the literal is evidence. Note that the literal can be a negative atom regardless of the given sign.
+
+Parameters:	
+pos_weight – The current positive weight of the literal.
+neg_weight – The current negative weight of the literal.
+sign – Denotes whether the literal or its negation is evidence. sign > 0 denotes the literal is evidence, otherwise its negation is evidence. Note: The literal itself can also still be a negative atom.
+Returns:	
+A tuple of the positive and negative weight as if the literal was evidence. For example, for probability, returns (self.one(), self.zero()) if sign else (self.zero(), self.one())
+
+ad_negate(pos_weight, neg_weight)[source]
+Negation in the context of an annotated disjunction. e.g. in a probabilistic context for 0.2::a ; 0.8::b, the negative label for both a and b is 1.0 such that model {a,-b} = 0.2 * 1.0 and {-a,b} = 1.0 * 0.8. For a, pos_weight would be 0.2 and neg_weight could be 0.8. The returned value is 1.0. :param pos_weight: The current positive weight of the literal (e.g. 0.2 or 0.8). Internal representation. :param neg_weight: The current negative weight of the literal (e.g. 0.8 or 0.2). Internal representation. :return: neg_weight corrected based on the given pos_weight, given the ad context (e.g. 1.0). Internal representation.
+
+classmethod create(*, engine, database, **kwargs)[source]
+Create an instance of this semiring class. Used for sub-queries.
+
+Parameters:	
+engine – Engine in use.
+database – Database in use.
+kwargs – Keyword arguments passed from subquery
+class SemiringProbability[source]
+Bases: problog.evaluator.Semiring
+
+Implementation of the semiring interface for probabilities.
+
+one()[source]
+Returns the identity element of the multiplication.
+
+zero()[source]
+Returns the identity element of the addition.
+
+is_one(value)[source]
+Tests whether the given value is the identity element of the multiplication.
+
+is_zero(value)[source]
+Tests whether the given value is the identity element of the addition.
+
+plus(a, b)[source]
+Computes the addition of the given values.
+
+times(a, b)[source]
+Computes the multiplication of the given values.
+
+negate(a)[source]
+Returns the negation. This operation is optional. For example, for probabilities return 1-a.
+
+Raises:	OperationNotSupported – if the semiring does not support this operation
+normalize(a, z)[source]
+Normalizes the given value with the given normalization constant.
+
+For example, for probabilities, returns a/z.
+
+Raises:	OperationNotSupported – if z is not one and the semiring does not support this operation
+value(a)[source]
+Transform the given external value into an internal value.
+
+is_dsp()[source]
+Indicates whether this semiring requires solving a disjoint sum problem.
+
+in_domain(a)[source]
+Checks whether the given (internal) value is valid.
+
+classmethod create(*, engine, database, **kwargs)[source]
+Create an instance of this semiring class. Used for sub-queries.
+
+Parameters:	
+engine – Engine in use.
+database – Database in use.
+kwargs – Keyword arguments passed from subquery
+class SemiringLogProbability[source]
+Bases: problog.evaluator.SemiringProbability
+
+Implementation of the semiring interface for probabilities with logspace calculations.
+
+one()[source]
+Returns the identity element of the multiplication.
+
+zero()[source]
+Returns the identity element of the addition.
+
+is_zero(value)[source]
+Tests whether the given value is the identity element of the addition.
+
+is_one(value)[source]
+Tests whether the given value is the identity element of the multiplication.
+
+plus(a, b)[source]
+Computes the addition of the given values.
+
+times(a, b)[source]
+Computes the multiplication of the given values.
+
+negate(a)[source]
+Returns the negation. This operation is optional. For example, for probabilities return 1-a.
+
+Raises:	OperationNotSupported – if the semiring does not support this operation
+value(a)[source]
+Transform the given external value into an internal value.
+
+result(a, formula=None)[source]
+Transform the given internal value into an external value.
+
+normalize(a, z)[source]
+Normalizes the given value with the given normalization constant.
+
+For example, for probabilities, returns a/z.
+
+Raises:	OperationNotSupported – if z is not one and the semiring does not support this operation
+is_dsp()[source]
+Indicates whether this semiring requires solving a disjoint sum problem.
+
+in_domain(a)[source]
+Checks whether the given (internal) value is valid.
+
+class SemiringSymbolic[source]
+Bases: problog.evaluator.Semiring
+
+Implementation of the semiring interface for probabilities using symbolic calculations.
+
+one()[source]
+Returns the identity element of the multiplication.
+
+zero()[source]
+Returns the identity element of the addition.
+
+plus(a, b)[source]
+Computes the addition of the given values.
+
+times(a, b)[source]
+Computes the multiplication of the given values.
+
+negate(a)[source]
+Returns the negation. This operation is optional. For example, for probabilities return 1-a.
+
+Raises:	OperationNotSupported – if the semiring does not support this operation
+value(a)[source]
+Transform the given external value into an internal value.
+
+normalize(a, z)[source]
+Normalizes the given value with the given normalization constant.
+
+For example, for probabilities, returns a/z.
+
+Raises:	OperationNotSupported – if z is not one and the semiring does not support this operation
+is_dsp()[source]
+Indicates whether this semiring requires solving a disjoint sum problem.
+
+classmethod create(*, engine, database, **kwargs)[source]
+Create an instance of this semiring class. Used for sub-queries.
+
+Parameters:	
+engine – Engine in use.
+database – Database in use.
+kwargs – Keyword arguments passed from subquery
+class Evaluatable[source]
+Bases: problog.core.ProbLogObject
+
+get_evaluator(semiring=None, evidence=None, weights=None, keep_evidence=False, **kwargs)[source]
+Get an evaluator for computing queries on this formula. It creates an new evaluator and initializes it with the given or predefined evidence.
+
+Parameters:	
+semiring – semiring to use
+evidence (dict(Term, bool)) – evidence values (override values defined in formula)
+weights – weights to use
+Returns:	
+evaluator for this formula
+
+evaluate(index=None, semiring=None, evidence=None, weights=None, **kwargs)[source]
+Evaluate a set of nodes.
+
+Parameters:	
+index – node to evaluate (default: all queries)
+semiring – use the given semiring
+evidence – use the given evidence values (overrides formula)
+weights – use the given weights (overrides formula)
+Returns:	
+The result of the evaluation expressed as an external value of the semiring. If index is None (all queries) then the result is a dictionary of name to value.
+
+class EvaluatableDSP[source]
+Bases: problog.evaluator.Evaluatable
+
+Interface for evaluatable formulae.
+
+class Evaluator(formula, semiring, weights, **kwargs)[source]
+Bases: object
+
+Generic evaluator.
+
+semiring
+Semiring used by this evaluator.
+
+propagate()[source]
+Propagate changes in weight or evidence values.
+
+evaluate(index)[source]
+Compute the value of the given node.
+
+evaluate_fact(node)[source]
+Evaluate fact.
+
+Parameters:	node – fact to evaluate
+Returns:	weight of the fact (as semiring result value)
+add_evidence(node)[source]
+Add evidence
+
+has_evidence()[source]
+Checks whether there is active evidence.
+
+set_evidence(index, value)[source]
+Set value for evidence node.
+
+Parameters:	
+index – index of evidence node
+value – value of evidence. True if the evidence is positive, False otherwise.
+set_weight(index, pos, neg)[source]
+Set weight of a node.
+
+Parameters:	
+index – index of node
+pos – positive weight (as semiring internal value)
+neg – negative weight (as semiring internal value)
+clear_evidence()[source]
+Clear all evidence.
+
+evidence()[source]
+Iterate over evidence.
+
+class FormulaEvaluator(formula, semiring, weights=None)[source]
+Bases: object
+
+Standard evaluator for boolean formula.
+
+set_weights(weights)[source]
+Set known weights.
+
+Parameters:	weights – dictionary of weights
+Returns:	
+get_weight(index)[source]
+Get the weight of the node with the given index.
+
+Parameters:	index – integer or formula.TRUE or formula.FALSE
+Returns:	weight of the node
+compute_weight(index)[source]
+Compute the weight of the node with the given index.
+
+Parameters:	index – integer or formula.TRUE or formula.FALSE
+Returns:	weight of the node
+class FormulaEvaluatorNSP(formula, semiring, weights=None)[source]
+Bases: problog.evaluator.FormulaEvaluator
+
+Evaluator for boolean formula that addresses the Neutral Sum Problem.
+
+get_weight(index)[source]
+Get the weight of the node with the given index.
+
+Parameters:	index – integer or formula.TRUE or formula.FALSE
+Returns:	weight of the node and the set of abs(literals) involved
+compute_weight(index)[source]
+Compute the weight of the node with the given index.
+
+Parameters:	index – integer or formula.TRUE or formula.FALSE
+Returns:	weight of the node
+6.6. problog.cnf_formula - CNF
+Provides access to CNF and weighted CNF.
+
+class CNF(**kwdargs)[source]
+Bases: problog.formula.BaseFormula
+
+A logic formula in Conjunctive Normal Form.
+
+add_atom(atom, force=False)[source]
+Add an atom to the CNF.
+
+Parameters:	
+atom – name of the atom
+force – add a clause for each atom to force it’s existence in the final CNF
+add_comment(comment)[source]
+Add a comment clause.
+
+Parameters:	comment – text of the comment
+add_clause(head, body)[source]
+Add a clause to the CNF.
+
+Parameters:	
+head – head of the clause (i.e. atom it defines)
+body – body of the clause
+add_constraint(constraint, force=False)[source]
+Add a constraint.
+
+Parameters:	
+constraint (problog.constraint.Constraint) – constraint to add
+force – force constraint to be true even though none of its values are set
+to_dimacs(partial=False, weighted=False, semiring=None, smart_constraints=False, names=False, invert_weights=False)[source]
+Transform to a string in DIMACS format.
+
+Parameters:	
+partial – split variables if possibly true / certainly true
+weighted – created a weighted (False, int, float)
+semiring – semiring for weight transformation (if weighted)
+names – Print names in comments
+Returns:	
+string in DIMACS format
+
+to_lp(partial=False, semiring=None, smart_constraints=False)[source]
+Transfrom to CPLEX lp format (MIP program). This is always weighted.
+
+Parameters:	
+partial – split variables in possibly true / certainly true
+semiring – semiring for weight transformation (if weighted)
+smart_constraints – only enforce constraints when variables are set
+Returns:	
+string in LP format
+
+from_partial(atoms)[source]
+Translates a (complete) conjunction in the partial formula back to the complete formula.
+
+For example: given an original formula with one atom ‘1’,
+this atom is translated to two atoms ‘1’ (pt) and ‘2’ (ct).
+The possible conjunctions are:
+
+[1, 2] => [1] certainly true (and possibly true) => true
+[-1, -2] => [-1] not possibly true (and certainly true) => false
+[1, -2] => [] possibly true but not certainly true => unknown
+[-1, 2] => INVALID certainly true but not possible => invalid (not checked)
+Parameters:	atoms – complete list of atoms in partial CNF
+Returns:	partial list of atoms in full CNF
+is_trivial()[source]
+Checks whether the CNF is trivial (i.e. contains no clauses)
+
+clauses
+Return the list of clauses
+
+clausecount
+Return the number of clauses
+
+clarks_completion(source, destination, force_atoms=False, **kwdargs)[source]
+Transform an acyclic propositional program to a CNF using Clark’s completion.
+
+Parameters:	
+source – acyclic program to transform
+destination – target CNF
+kwdargs – additional options (ignored)
+Returns:	
+destination
+
+6.7. problog.nnf_formula - d-DNNF
+Provides access to d-DNNF formulae.
+
+exception DSharpError[source]
+Bases: problog.errors.CompilationError
+
+DSharp has crashed.
+
+class DDNNF(**kwdargs)[source]
+Bases: problog.formula.LogicDAG, problog.evaluator.EvaluatableDSP
+
+A d-DNNF formula.
+
+class SimpleDDNNFEvaluator(formula, semiring, weights=None, **kwargs)[source]
+Bases: problog.evaluator.Evaluator
+
+Evaluator for d-DNNFs.
+
+propagate()[source]
+Propagate changes in weight or evidence values.
+
+evaluate_fact(node)[source]
+Evaluate fact.
+
+Parameters:	node – fact to evaluate
+Returns:	weight of the fact (as semiring result value)
+evaluate(node)[source]
+Compute the value of the given node.
+
+has_constraints(ignore_type=None)[source]
+Check whether the formula has any constraints that are not of the ignore_type. :param ignore_type: A set of constraint classes to ignore. :type ignore_type: None | Set
+
+get_root_weight()[source]
+Get the WMC of the root of this formula.
+
+Returns:	The WMC of the root of this formula (WMC of node len(self.formula)), multiplied with weight of True
+(self.weights.get(0)).
+
+set_weight(index, pos, neg)[source]
+Set weight of a node.
+
+Parameters:	
+index – index of node
+pos – positive weight (as semiring internal value)
+neg – negative weight (as semiring internal value)
+set_evidence(index, value)[source]
+Set value for evidence node.
+
+Parameters:	
+index – index of evidence node
+value – value of evidence. True if the evidence is positive, False otherwise.
+class Compiler[source]
+Bases: object
+
+Interface to CNF to d-DNNF compiler tool.
+
+classmethod get_default()[source]
+Get default compiler for this system.
+
+classmethod get(name)[source]
+Get compiler by name (or default if name not found).
+
+Parameters:	name – name of the compiler
+Returns:	function used to call compiler
+classmethod add(name, func)[source]
+Add a compiler.
+
+Parameters:	
+name – name of the compiler
+func – function used to call the compiler
+6.8. problog.dd_formula - Decision Diagrams
+Common interface to decision diagrams (BDD, SDD).
+
+class DD(**kwdargs)[source]
+Bases: problog.formula.LogicFormula, problog.evaluator.EvaluatableDSP
+
+Root class for bottom-up compiled decision diagrams.
+
+get_manager()[source]
+Get the underlying manager
+
+get_inode(index)[source]
+Get the internal node corresponding to the entry at the given index.
+
+Parameters:	index – index of node to retrieve
+Returns:	internal node corresponding to the given index
+set_inode(index, node)[source]
+Set the internal node for the given index.
+
+Parameters:	
+index (int > 0) – index at which to set the new node
+node – new node
+get_constraint_inode()[source]
+Get the internal node representing the constraints for this formula.
+
+build_dd()[source]
+Build the internal representation of the formula.
+
+build_constraint_dd()[source]
+Build the internal representation of the constraint of this formula.
+
+to_dot(*args, **kwargs)[source]
+Write out in GraphViz (dot) format.
+
+Parameters:	
+not_as_node – represent negation as a node
+nodeprops – additional properties for nodes
+Returns:	
+string containing dot representation
+
+class DDManager[source]
+Bases: object
+
+Manager for decision diagrams.
+
+add_variable(label=0)[source]
+Add a variable to the manager and return its label.
+
+Parameters:	label (int) – suggested label of the variable
+Returns:	label of the new variable
+Return type:	int
+literal(label)[source]
+Return an SDD node representing a literal.
+
+Parameters:	label (int) – label of the literal
+Returns:	internal node representing the literal
+is_true(node)[source]
+Checks whether the SDD node represents True.
+
+Parameters:	node – node to verify
+Returns:	True if the node represents True
+Return type:	bool
+true()[source]
+Return an internal node representing True.
+
+Returns:	
+is_false(node)[source]
+Checks whether the internal node represents False
+
+Parameters:	node (SDDNode) – node to verify
+Returns:	False if the node represents False
+Return type:	bool
+false()[source]
+Return an internal node representing False.
+
+conjoin2(a, b)[source]
+Base method for conjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+conjunction of given nodes
+
+disjoin2(a, b)[source]
+Base method for disjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+disjunction of given nodes
+
+conjoin(*nodes)[source]
+Create the conjunction of the given nodes.
+
+Parameters:	nodes – nodes to conjoin
+Returns:	conjunction of the given nodes
+This method handles node reference counting, that is, all intermediate results are marked for garbage collection, and the output node has a reference count greater than one. Reference count on input nodes is not touched (unless one of the inputs becomes the output).
+
+disjoin(*nodes)[source]
+Create the disjunction of the given nodes.
+
+Parameters:	nodes – nodes to conjoin
+Returns:	disjunction of the given nodes
+This method handles node reference counting, that is, all intermediate results are marked for garbage collection, and the output node has a reference count greater than one. Reference count on input nodes is not touched (unless one of the inputs becomes the output).
+
+equiv(node1, node2)[source]
+Enforce the equivalence between node1 and node2.
+
+Parameters:	
+node1 –
+node2 –
+Returns:	
+negate(node)[source]
+Create the negation of the given node.
+
+This method handles node reference counting, that is, all intermediate results are marked for garbage collection, and the output node has a reference count greater than one. Reference count on input nodes is not touched (unless one of the inputs becomes the output).
+
+Parameters:	node – negation of the given node
+Returns:	negation of the given node
+same(node1, node2)[source]
+Checks whether two SDD nodes are equivalent.
+
+Parameters:	
+node1 – first node
+node2 – second node
+Returns:	
+True if the given nodes are equivalent, False otherwise.
+
+Return type:	
+bool
+
+ref(*nodes)[source]
+Increase the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to increase count on
+deref(*nodes)[source]
+Decrease the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to decrease count on
+write_to_dot(node, filename)[source]
+Write SDD node to a DOT file.
+
+Parameters:	
+node (SDDNode) – SDD node to output
+filename (basestring) – filename to write to
+wmc(node, weights, semiring)[source]
+Perform Weighted Model Count on the given node.
+
+Parameters:	
+node – node to evaluate
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+Returns:	
+weighted model count
+
+wmc_literal(node, weights, semiring, literal)[source]
+Evaluate a literal in the decision diagram.
+
+Parameters:	
+node – root of the decision diagram
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+literal – literal to evaluate
+Returns:	
+weighted model count
+
+wmc_true(weights, semiring)[source]
+Perform weighted model count on a true node. This can be used to obtain a normalization constant.
+
+Parameters:	
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+Returns:	
+weighted model count
+
+class DDEvaluator(formula, semiring, weights=None, **kwargs)[source]
+Bases: problog.evaluator.Evaluator
+
+Generic evaluator for bottom-up compiled decision diagrams.
+
+Parameters:	
+formula –
+semiring –
+weights –
+Type:	
+DD
+
+Returns:	
+propagate()[source]
+Propagate changes in weight or evidence values.
+
+evaluate(node)[source]
+Compute the value of the given node.
+
+evaluate_fact(node)[source]
+Evaluate fact.
+
+Parameters:	node – fact to evaluate
+Returns:	weight of the fact (as semiring result value)
+set_evidence(index, value)[source]
+Set value for evidence node.
+
+Parameters:	
+index – index of evidence node
+value – value of evidence. True if the evidence is positive, False otherwise.
+set_weight(index, pos, neg)[source]
+Set weight of a node.
+
+Parameters:	
+index – index of node
+pos – positive weight (as semiring internal value)
+neg – negative weight (as semiring internal value)
+build_dd(source, destination, **kwdargs)[source]
+Build a DD from another formula.
+
+Parameters:	
+source – source formula
+destination – destination formula
+kwdargs – extra arguments
+Returns:	
+destination
+
+6.9. problog.bdd_formula - Binary Decision Diagrams
+Provides access to Binary Decision Diagrams (BDDs).
+
+class BDD(**kwdargs)[source]
+Bases: problog.dd_formula.DD
+
+A propositional logic formula consisting of and, or, not and atoms represented as an BDD.
+
+get_atom_from_inode(node)[source]
+Get the original atom given an internal node.
+
+Parameters:	node – internal node
+Returns:	atom represented by the internal node
+classmethod is_available()[source]
+Checks whether the BDD library is available.
+
+class BDDManager(varcount=0, auto_gc=True)[source]
+Bases: problog.dd_formula.DDManager
+
+Manager for BDDs. It wraps around the pyeda BDD module
+
+add_variable(label=0)[source]
+Add a variable to the manager and return its label.
+
+Parameters:	label (int) – suggested label of the variable
+Returns:	label of the new variable
+Return type:	int
+get_variable(node)[source]
+Get the variable represented by the given node.
+
+Parameters:	node – internal node
+Returns:	original node
+literal(label)[source]
+Return an SDD node representing a literal.
+
+Parameters:	label (int) – label of the literal
+Returns:	internal node representing the literal
+is_true(node)[source]
+Checks whether the SDD node represents True.
+
+Parameters:	node – node to verify
+Returns:	True if the node represents True
+Return type:	bool
+true()[source]
+Return an internal node representing True.
+
+Returns:	
+is_false(node)[source]
+Checks whether the internal node represents False
+
+Parameters:	node (SDDNode) – node to verify
+Returns:	False if the node represents False
+Return type:	bool
+false()[source]
+Return an internal node representing False.
+
+conjoin2(r, s)[source]
+Base method for conjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+conjunction of given nodes
+
+disjoin2(r, s)[source]
+Base method for disjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+disjunction of given nodes
+
+negate(node)[source]
+Create the negation of the given node.
+
+This method handles node reference counting, that is, all intermediate results are marked for garbage collection, and the output node has a reference count greater than one. Reference count on input nodes is not touched (unless one of the inputs becomes the output).
+
+Parameters:	node – negation of the given node
+Returns:	negation of the given node
+same(node1, node2)[source]
+Checks whether two SDD nodes are equivalent.
+
+Parameters:	
+node1 – first node
+node2 – second node
+Returns:	
+True if the given nodes are equivalent, False otherwise.
+
+Return type:	
+bool
+
+ref(*nodes)[source]
+Increase the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to increase count on
+deref(*nodes)[source]
+Decrease the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to decrease count on
+write_to_dot(node, filename)[source]
+Write SDD node to a DOT file.
+
+Parameters:	
+node (SDDNode) – SDD node to output
+filename (basestring) – filename to write to
+wmc(node, weights, semiring)[source]
+Perform Weighted Model Count on the given node.
+
+Parameters:	
+node – node to evaluate
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+Returns:	
+weighted model count
+
+wmc_literal(node, weights, semiring, literal)[source]
+Evaluate a literal in the decision diagram.
+
+Parameters:	
+node – root of the decision diagram
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+literal – literal to evaluate
+Returns:	
+weighted model count
+
+wmc_true(weights, semiring)[source]
+Perform weighted model count on a true node. This can be used to obtain a normalization constant.
+
+Parameters:	
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+Returns:	
+weighted model count
+
+build_bdd(source, destination, **kwdargs)[source]
+Build an SDD from another formula.
+
+Parameters:	
+source – source formula
+destination – destination formula
+kwdargs – extra arguments
+Returns:	
+destination
+
+6.10. problog.sdd_formula - Sentential Decision Diagrams
+Interface to Sentential Decision Diagrams (SDD)
+
+class SDD(sdd_auto_gc=False, var_constraint=None, init_varcount=-1, **kwdargs)[source]
+Bases: problog.dd_formula.DD
+
+A propositional logic formula consisting of and, or, not and atoms represented as an SDD.
+
+This class has two restrictions with respect to the default LogicFormula:
+
+The number of atoms in the SDD should be known at construction time.
+It does not support updatable nodes.
+This means that this class can not be used directly during grounding. It can be used as a target for the makeAcyclic method.
+
+classmethod is_available()[source]
+Checks whether the SDD library is available.
+
+to_internal_dot(node=None)[source]
+SDD for the given node, formatted for use with Graphviz dot.
+
+Parameters:	node (SddNode) – The node to get the dot from.
+Returns:	The dot format of the given node. When node is None, the shared_sdd will be used (contains all active
+sdd structures). :rtype: str
+
+sdd_to_dot(node, litnamemap=None, show_id=False, merge_leafs=False)[source]
+SDD for the given node, formatted for use with Graphviz dot. This method provides more control over the used symbols than to_internal_dot (see litnamemap). Primes are given by a dotted line, subs by a full line.
+
+Parameters:	
+node (SddNode) – The node to get the dot from.
+litnamemap (dict[(int | str), str] | bool | None) – A dictionary providing the symbols to use. The following options are available: 1. literals, e.g. {1:’A’, -1:’-A’, …}, 2. True/False, e.g. {true’:’1’, ‘false’:’0’} 3. And/Or e.g. {‘mult’:’x’, ‘add’:’+’} When litnamemap = True, self.get_litnamemap() will be used.
+show_id – Whether to display the ids of each sdd node.
+merge_leafs – Whether to merge the same leaf nodes. True results in less nodes but makes it harder to
+render without having crossing lines. :return: The dot format of the given node. When node is None, this mgr is used instead. :rtype: str
+
+get_litnamemap()[source]
+Get a dictionary mapping literal IDs (inode index) to names. e.g; {1:’x’, -1:’-x’}
+
+to_formula()[source]
+Extracts a LogicFormula from the SDD.
+
+class SDDManager(varcount=0, auto_gc=False, var_constraint=None)[source]
+Bases: problog.dd_formula.DDManager
+
+Manager for SDDs. It wraps around the SDD library and offers some additional methods.
+
+get_manager()[source]
+Get the underlying sdd manager.
+
+add_variable(label=0)[source]
+Add a variable to the manager and return its label.
+
+Parameters:	label (int) – suggested label of the variable
+Returns:	label of the new variable
+Return type:	int
+literal(label)[source]
+Return an SDD node representing a literal.
+
+Parameters:	label (int) – label of the literal
+Returns:	internal node representing the literal
+is_true(node)[source]
+Checks whether the SDD node represents True.
+
+Parameters:	node – node to verify
+Returns:	True if the node represents True
+Return type:	bool
+true()[source]
+Return an internal node representing True.
+
+Returns:	
+is_false(node)[source]
+Checks whether the internal node represents False
+
+Parameters:	node (SDDNode) – node to verify
+Returns:	False if the node represents False
+Return type:	bool
+false()[source]
+Return an internal node representing False.
+
+conjoin2(a, b)[source]
+Base method for conjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+conjunction of given nodes
+
+disjoin2(a, b)[source]
+Base method for disjoining two internal nodes.
+
+Parameters:	
+a – first internal node
+b – second internal node
+Returns:	
+disjunction of given nodes
+
+negate(node)[source]
+Create the negation of the given node.
+
+This method handles node reference counting, that is, all intermediate results are marked for garbage collection, and the output node has a reference count greater than one. Reference count on input nodes is not touched (unless one of the inputs becomes the output).
+
+Parameters:	node – negation of the given node
+Returns:	negation of the given node
+same(node1, node2)[source]
+Checks whether two SDD nodes are equivalent.
+
+Parameters:	
+node1 – first node
+node2 – second node
+Returns:	
+True if the given nodes are equivalent, False otherwise.
+
+Return type:	
+bool
+
+ref(*nodes)[source]
+Increase the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to increase count on
+deref(*nodes)[source]
+Decrease the reference count for the given nodes.
+
+Parameters:	nodes (tuple of SDDNode) – nodes to decrease count on
+write_to_dot(node, filename, litnamemap=None)[source]
+Write SDD node to a DOT file.
+
+Parameters:	
+node (SDDNode) – SDD node to output
+filename (basestring) – filename to write to
+to_internal_dot(node=None)[source]
+SDD for the given node, formatted for use with Graphviz dot.
+
+Parameters:	node (SddNode) – The node to get the dot from.
+Returns:	The dot format of the given node. When node is None, the shared_sdd will be used (contains all active
+sdd structures). :rtype: str
+
+sdd_to_dot(node, litnamemap=None, show_id=False, merge_leafs=False)[source]
+SDD for the given node, formatted for use with Graphviz dot. This method provides more control over the used symbols than to_internal_dot (see litnamemap). Primes are given by a dotted line, subs by a full line.
+
+Parameters:	
+node – The node to get the dot from.
+litnamemap (dict[(int | str), str] | None) – A dictionary providing the symbols to use. The following options are available: 1. literals, e.g. {1:’A’, -1:’-A’, …}, 2. True/False, e.g. {true’:’1’, ‘false’:’0’} 3. And/Or e.g. {‘mult’:’x’, ‘add’:’+’}
+show_id – Whether to display the ids of each sdd node.
+merge_leafs – Whether to merge the same leaf nodes. True results in less nodes but makes it harder to
+render without having crossing lines. :return: The dot format of the given node. When node is None, the mgr is used (this behavior can be overriden). :rtype: str
+
+wmc(node, weights, semiring, literal=None, pr_semiring=True, perform_smoothing=True, smooth_to_root=False, wmc_func=None)[source]
+Perform Weighted Model Count on the given node or the given literal.
+
+Common usage: wmc(node, weights, semiring) and wmc(node, weights, semiring, smooth_to_root=True)
+
+Parameters:	
+node – node to evaluate Type: SddNode
+weights (dict[int, tuple[Any, Any]]) – weights for the variables in the node. Type: {literal_id : (pos_weight, neg_weight)}
+semiring (Semiring) – use the operations defined by this semiring. Type: Semiring
+literal – When a literal is given, the result of WMC(literal) is returned instead.
+pr_semiring (bool) – Whether the given semiring is a (logspace) probability semiring.
+perform_smoothing (bool) – Whether to perform smoothing. When pr_semiring is True, smoothing is performed regardless.
+smooth_to_root (bool) – Whether to perform smoothing compared to the root. When pr_semiring is True, smoothing compared to the root is not performed regardless of this flag.
+wmc_func (function) – The WMC function to use. If None, a built_in one will be used that depends on the given semiring. Type: function[SddNode, List[Tuple[prime_weight, sub_weight, Set[prime_used_lit], Set[sub_used_lit]]], Set[expected_prime_lit], Set[expected_sub_lit]] -> weight
+Returns:	
+weighted model count of node if literal=None, else the weights are propagated up to node but the weighted model count of literal is returned.
+
+wmc_literal(node, weights, semiring, literal)[source]
+Evaluate a literal in the decision diagram.
+
+Parameters:	
+node – root of the decision diagram
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+literal – literal to evaluate
+Returns:	
+weighted model count
+
+wmc_true(weights, semiring)[source]
+Perform weighted model count on a true node. This can be used to obtain a normalization constant.
+
+Parameters:	
+weights – weights for the variables in the node
+semiring – use the operations defined by this semiring
+Returns:	
+weighted model count
+
+get_deepcopy_noref()[source]
+Get a deep copy of this without reference counts to inodes. Notes: No inode will have a reference count and auto_gc_and_minimize will be disabled. :return: A deep copy of this without any reference counts.
+
+class x_constrained(X)
+Bases: tuple
+
+X
+Alias for field number 0
+
+class SDDEvaluator(formula, semiring, weights=None, **kwargs)[source]
+Bases: problog.dd_formula.DDEvaluator
+
+build_sdd(source, destination, **kwdargs)[source]
+Build an SDD from another formula.
+
+Parameters:	
+source (LogicDAG) – source formula
+destination (SDD) – destination formula
+kwdargs – extra arguments
+Returns:	
+destination
+
+6.11. problog.core - Binary Decision Diagrams
+Provides core functionality of ProbLog.
+
+class ProbLog[source]
+Bases: object
+
+Static class containing transformation information
+
+classmethod register_transformation(src, target, action=None)[source]
+Register a transformation from class src to class target using function action.
+
+Parameters:	
+src – source function
+target – target function
+action – transformation function
+classmethod register_create_as(repl, orig)[source]
+Register that we can create objects of class repl in the same way as objects of class orig.
+
+Parameters:	
+repl – object we want to create
+orig – object construction we can use instead
+classmethod register_allow_subclass(orig)[source]
+Register that we can create objects of class repl by creating an object of a subclass.
+
+Parameters:	orig –
+classmethod find_paths(src, target, stack=())[source]
+Find all possible paths to transform the src object into the target class.
+
+Parameters:	
+src – object to transform
+target – class to tranform the object to
+stack – stack of intermediate classes
+Returns:	
+list of class, action, class, action, …, class
+
+classmethod convert(src, target, **kwdargs)[source]
+Convert the source object into an object of the target class.
+
+Parameters:	
+src – source object
+target – target class
+kwdargs – additional arguments passed to transformation functions
+exception TransformationUnavailable[source]
+Bases: Exception
+
+Exception thrown when no valid transformation between two ProbLogObjects can be found.
+
+class ProbLogObject[source]
+Bases: object
+
+Root class for all convertible objects in the ProbLog system.
+
+classmethod create_from(obj, **kwdargs)[source]
+Transform the given object into an object of the current class using transformations.
+
+Parameters:	
+obj – obj to transform
+kwdargs – additional options
+Returns:	
+object of current class
+
+classmethod createFrom(obj, **kwdargs)[source]
+Transform the given object into an object of the current class using transformations.
+
+Parameters:	
+obj – obj to transform
+kwdargs – additional options
+Returns:	
+object of current class
+
+classmethod create_from_default_action(src)[source]
+Create object of this class from given source object using default action.
+
+Parameters:	src – source object to transform
+Returns:	transformed object
+transform_create_as(cls1, cls2)[source]
+Informs the system that cls1 can be used instead of cls2 in any transformations.
+
+Parameters:	
+cls1 –
+cls2 –
+Returns:	
+class transform(cls1, cls2, func=None)[source]
+Bases: object
+
+Decorator for registering a transformation between two classes.
+
+Parameters:	
+cls1 – source class
+cls2 – target class
+func – transformation function (for direct use instead of decorator)
+list_transformations()[source]
+Print an overview of available transformations.
+
+6.12. problog.engine - Grounding engine
+Grounding engine to transform a ProbLog program into a propositional formula.
+
+ground(model, target=None, grounder=None, **kwdargs)[source]
+Ground a given model.
+
+Parameters:	model (LogicProgram) – logic program to ground
+Returns:	the ground program
+Return type:	LogicFormula
+ground_default(model, target=None, queries=None, evidence=None, propagate_evidence=False, labels=None, engine=None, **kwdargs)[source]
+Ground a given model.
+
+Parameters:	
+model (LogicProgram) – logic program to ground
+target (LogicFormula) – formula in which to store ground program
+queries – list of queries to override the default
+evidence – list of evidence atoms to override the default
+Returns:	
+the ground program
+
+Return type:	
+LogicFormula
+
+class GenericEngine[source]
+Bases: object
+
+Generic interface to a grounding engine.
+
+prepare(db: problog.program.LogicProgram)[source]
+Prepare the given database for querying. Calling this method is optional.
+
+Parameters:	db – logic program
+Returns:	logic program in optimized format where builtins are initialized and directives have been evaluated
+query(db: problog.program.LogicProgram, term)[source]
+Evaluate a query without generating a ground program.
+
+Parameters:	
+db – logic program
+term – term to query; variables should be represented as None
+Returns:	
+list of tuples of argument for which the query succeeds.
+
+ground(db: problog.program.LogicProgram, term, target=None, label=None)[source]
+Ground a given query term and store the result in the given ground program.
+
+Parameters:	
+db – logic program
+term – term to ground; variables should be represented as None
+target – target logic formula to store grounding in (a new one is created if none is given)
+label – optional label (query, evidence, …)
+Returns:	
+logic formula (target if given)
+
+ground_all(db: problog.program.LogicProgram, target=None, queries=None, evidence=None)[source]
+Ground all queries and evidence found in the the given database.
+
+Parameters:	
+db – logic program
+target – logic formula to ground into
+queries – list of queries to evaluate instead of the ones in the logic program
+evidence – list of evidence to evaluate instead of the ones in the logic program
+Returns:	
+ground program
+
+class ClauseDBEngine(builtins=True, **kwdargs)[source]
+Bases: problog.engine.GenericEngine
+
+Parent class for all Python ClauseDB-based engines.
+
+load_builtins()[source]
+Load default builtins.
+
+get_builtin(index)[source]
+Get builtin’s evaluation function based on its identifier. :param index: index of the builtin :return: function that evaluates the builtin
+
+add_builtin(predicate, arity, function)[source]
+Add a builtin.
+
+Parameters:	
+predicate – name of builtin predicate
+arity – arity of builtin predicate
+function – function to execute builtin
+get_builtins()[source]
+Get the list of builtins.
+
+prepare(db)[source]
+Convert given logic program to suitable format for this engine. Calling this method is optional, but it allows to perform multiple operations on the same database. This also executes any directives in the input model.
+
+Parameters:	db – logic program to prepare for evaluation
+Returns:	logic program in a suitable format for this engine
+Return type:	ClauseDB
+get_non_cache_functor()[source]
+Get a unique functor that is excluded from caching.
+
+Returns:	unique functor that is excluded from caching
+Return type:	basestring
+create_context(content, define=None, parent=None)[source]
+Create a variable context.
+
+query(db, term, backend=None, **kwdargs)[source]
+Parameters:	
+db –
+term –
+kwdargs –
+Returns:	
+ground(db, term, target=None, label=None, **kwdargs)[source]
+Ground a query on the given database.
+
+Parameters:	
+db (LogicProgram) – logic program
+term (Term) – query term
+label (str) – type of query (e.g. query, evidence or -evidence)
+kwdargs – additional arguments
+Returns:	
+ground program containing the query
+
+Return type:	
+LogicFormula
+
+ground_step(db, term, gp=None, silent_fail=True, assume_prepared=False, **kwdargs)[source]
+Parameters:	
+db (LogicProgram) –
+term –
+gp –
+silent_fail –
+assume_prepared –
+kwdargs –
+Returns:	
+ground_all(db, target=None, queries=None, evidence=None, propagate_evidence=False, labels=None)[source]
+Ground all queries and evidence found in the the given database.
+
+Parameters:	
+db – logic program
+target – logic formula to ground into
+queries – list of queries to evaluate instead of the ones in the logic program
+evidence – list of evidence to evaluate instead of the ones in the logic program
+Returns:	
+ground program
+
+exception UnknownClauseInternal[source]
+Bases: Exception
+
+Undefined clause in call used internally.
+
+exception NonGroundProbabilisticClause(location)[source]
+Bases: problog.errors.GroundingError
+
+Encountered a non-ground probabilistic clause.
+
+exception UnknownClause(signature, location)[source]
+Bases: problog.errors.GroundingError
+
+Undefined clause in call.
+
+6.13. problog.engine_builtin - Grounding engine builtins
+Implementation of Prolog / ProbLog builtins.
+
+add_standard_builtins(engine, b=None, s=None, sp=None)[source]
+Adds standard builtins to the given engine.
+
+Parameters:	
+engine (ClauseDBEngine) – engine to add builtins to
+b – wrapper for boolean builtins (returning True/False)
+s – wrapper for simple builtins (return deterministic results)
+sp – wrapper for probabilistic builtins (return probabilistic results)
+exception CallModeError(functor, args, accepted=None, message=None, location=None)[source]
+Bases: problog.errors.GroundingError
+
+Represents an error in builtin argument types.
+
+class StructSort(obj, *args)[source]
+Bases: object
+
+Comparator of terms based on structure.
+
+check_mode(args, accepted, functor=None, location=None, database=None, **kwdargs)[source]
+Checks the arguments against a list of accepted types.
+
+Parameters:	
+args (tuple of Term) – arguments to check
+accepted (list of str) – list of accepted combination of types (see mode_types)
+functor – functor of the call (used for error message)
+location – location of the call (used for error message)
+database – database (used for error message)
+kwdargs – additional arguments (not used)
+Returns:	
+the index of the first mode in accepted that matches the arguments
+
+Return type:	
+int
+
+list_elements(term)[source]
+Extract elements from a List term. Ignores the list tail.
+
+Parameters:	term (Term) – term representing a list
+Returns:	elements of the list
+Return type:	list of Term
+list_tail(term)[source]
+Extract the tail of the list.
+
+Parameters:	term (Term) – Term representing a list
+Returns:	tail of the list
+Return type:	Term
+exception IndirectCallCycleError(location=None)[source]
+Bases: problog.errors.GroundingError
+
+Cycle should not pass through indirect calls (e.g. call/1, findall/3).
+
+6.14. problog.engine_stack - Stack-based implementation of grounding engine
+Default implementation of the ProbLog grounding engine.
+
+exception InvalidEngineState[source]
+Bases: Exception
+
+class StackBasedEngine(label_all=False, **kwdargs)[source]
+Bases: problog.engine.ClauseDBEngine
+
+load_builtins()[source]
+Load default builtins.
+
+in_cycle(pointer)[source]
+Check whether the node at the given pointer is inside a cycle.
+
+Parameters:	pointer –
+Returns:	
+execute(node_id, target=None, database=None, subcall=False, is_root=False, name=None, **kwdargs)[source]
+Execute the given node. :param node_id: pointer of the node in the database :param subcall: indicates whether this is a toplevel call or a subcall :param target: target datastructure for storing the ground program :param database: database containing the logic program to ground :param kwdargs: additional arguments :return: results of the execution
+
+cleanup(obj)[source]
+Remove the given node from the stack and lower the pointer. :param obj: pointer of the object to remove :type obj: int
+
+create_context(content, define=None, parent=None, state=None)[source]
+Create a variable context.
+
+class State(*args, **kwargs)[source]
+Bases: dict
+
+class Context(parent, state=None)[source]
+Bases: list
+
+class FixedContext[source]
+Bases: tuple
+
+class MessageQueue[source]
+Bases: object
+
+A queue of messages.
+
+append(message)[source]
+Add a message to the queue.
+
+Parameters:	message –
+Returns:	
+cycle_exhausted()[source]
+Check whether there are messages inside the cycle.
+
+Returns:	
+pop()[source]
+Pop a message from the queue.
+
+Returns:	
+class MessageFIFO(engine)[source]
+Bases: problog.engine_stack.MessageQueue
+
+append(message)[source]
+Add a message to the queue.
+
+Parameters:	message –
+Returns:	
+pop()[source]
+Pop a message from the queue.
+
+Returns:	
+cycle_exhausted()[source]
+Check whether there are messages inside the cycle.
+
+Returns:	
+class MessageAnyOrder(engine)[source]
+Bases: problog.engine_stack.MessageQueue
+
+cycle_exhausted()[source]
+Check whether there are messages inside the cycle.
+
+Returns:	
+class MessageOrderD(engine)[source]
+Bases: problog.engine_stack.MessageAnyOrder
+
+append(message)[source]
+Add a message to the queue.
+
+Parameters:	message –
+Returns:	
+pop()[source]
+Pop a message from the queue.
+
+Returns:	
+class MessageOrderDrc(engine)[source]
+Bases: problog.engine_stack.MessageAnyOrder
+
+append(message)[source]
+Add a message to the queue.
+
+Parameters:	message –
+Returns:	
+pop()[source]
+Pop a message from the queue.
+
+Returns:	
+class BooleanBuiltIn(base_function)[source]
+Bases: object
+
+Simple builtin that consist of a check without unification. (e.g. var(X), integer(X), … ).
+
+class SimpleBuiltIn(base_function)[source]
+Bases: object
+
+Simple builtin that does cannot be involved in a cycle or require engine information and has 0 or more results.
+
+class SimpleProbabilisticBuiltIn(base_function)[source]
+Bases: object
+
+Simple builtin that does cannot be involved in a cycle or require engine information and has 0 or more results.
+
+class MessageOrder1(engine)[source]
+Bases: problog.engine_stack.MessageAnyOrder
+
+append(message)[source]
+Add a message to the queue.
+
+Parameters:	message –
+Returns:	
+pop()[source]
+Pop a message from the queue.
+
+Returns:	
+6.15. problog.engine_unify - Unification
+Implementation of unification for the grounding engine.
+
+exception UnifyError[source]
+Bases: Exception
+
+Unification error (used and handled internally).
+
+substitute_all(terms, subst, wrapped=False)[source]
+Parameters:	
+terms –
+subst –
+Returns:	
+instantiate(term, context)[source]
+Replace variables in Term by values based on context lookup table.
+
+Parameters:	
+term –
+context –
+Returns:	
+exception OccursCheck(location=None)[source]
+Bases: problog.errors.GroundingError
+
+unify_value(value1, value2, source_values)[source]
+Unify two values that exist in the same context. :param value1: :param value2: :param source_values: :return:
+
+unify_value_dc(value1, value2, source_values, target_values)[source]
+Unify two values that exist in different contexts. Updates the mapping of variables from value1 to values from value2.
+
+Parameters:	
+value1 –
+value2 –
+source_values – mapping of source variable to target value
+target_values – mapping of target variable to TARGET value
+substitute_call_args(terms, context, min_var)[source]
+Parameters:	
+terms –
+context –
+Returns:	
+substitute_head_args(terms, context)[source]
+Extract the clause head arguments from the clause context. :param terms: head arguments. These can contain variables >0. :param context: clause context. These can contain variable <0. :return: input terms where variables are substituted by their values in the context
+
+substitute_simple(term, context)[source]
+Parameters:	
+term –
+context –
+Returns:	
+unify_call_head(call_args, head_args, target_context)[source]
+Unify argument list from clause call and clause head. :param call_args: arguments of the call :param head_args: arguments of the head :param target_context: list of values of variables in the clause :raise UnifyError: unification failed
+
+unify_call_return(result, call_args, context, var_translate, min_var, mask=None)[source]
+Transforms the result returned by a call into the calling context.
+
+Parameters:	
+result – result returned by call
+call_args – arguments used in the call
+context – calling context
+var_translate – variable translation for local variables from call context to calling context
+min_var – number of local variables currently in calling context
+mask – mask indicating whether call_args are non-ground (ground can be skipped in unification)
+6.16. problog.extern - Calling Python from ProbLog
+Interface for calling Python from ProbLog.
+
+6.17. problog.forward - Forward compilation and evaluation
+Forward compilation using TP-operator.
+
+class ForwardInference(compile_timeout=None, **kwdargs)[source]
+Bases: problog.dd_formula.DD
+
+build_dd()[source]
+Build the internal representation of the formula.
+
+update_inode(index)[source]
+Recompute the inode at the given index.
+
+get_inode(index, final=False)[source]
+Get the internal node corresponding to the entry at the given index. :param index: index of node to retrieve :return: SDD node corresponding to the given index :rtype: SDDNode
+
+set_inode(index, node)[source]
+Set the internal node for the given index.
+
+Parameters:	
+index (int > 0) – index at which to set the new node
+node – new node
+add_constraint(c)[source]
+Add a constraint
+
+Parameters:	constraint (problog.constraint.Constraint) – constraint to add
+class ForwardSDD(**kwargs)[source]
+Bases: problog.formula.LogicFormula, problog.evaluator.EvaluatableDSP
+
+class ForwardBDD(**kwargs)[source]
+Bases: problog.formula.LogicFormula, problog.evaluator.EvaluatableDSP
+
+class ForwardEvaluator(formula, semiring, fdd, weights=None, verbose=None, **kwargs)[source]
+Bases: problog.evaluator.Evaluator
+
+An evaluator using anytime forward compilation.
+
+propagate()[source]
+Propagate changes in weight or evidence values.
+
+evaluate(index)[source]
+Compute the value of the given node.
+
+has_evidence()[source]
+Checks whether there is active evidence.
+
+clear_evidence()[source]
+Clear all evidence.
+
+evidence()[source]
+Iterate over evidence.
+
+6.18. problog.kbest - K-Best inference using MaxSat
+Anytime evaluation using best proofs.
+
+class KBestFormula(**kwargs)[source]
+Bases: problog.cnf_formula.CNF, problog.evaluator.Evaluatable
+
+classmethod is_available()[source]
+Checks whether the SDD library is available.
+
+class KBestEvaluator(formula, semiring, weights=None, lower_only=False, verbose=None, convergence=1e-09, explain=None, **kwargs)[source]
+Bases: problog.evaluator.Evaluator
+
+propagate()[source]
+Propagate changes in weight or evidence values.
+
+evaluate(index)[source]
+Compute the value of the given node.
+
+add_evidence(node)[source]
+Add evidence
+
+has_evidence()[source]
+Checks whether there is active evidence.
+
+clear_evidence()[source]
+Clear all evidence.
+
+evidence()[source]
+Iterate over evidence.
+
+6.19. problog.maxsat - Interface to MaxSAT solvers
+Interface to MaxSAT solvers.
+
+exception UnsatisfiableError[source]
+Bases: problog.errors.ProbLogError
+
+6.20. problog.parser - Parser for Prolog programs
+Efficient low-level parser for Prolog programs.
+
+exception ParseError(string, message, location)[source]
+Bases: problog.errors.ParseError
+
+exception UnexpectedCharacter(string, position)[source]
+Bases: problog.parser.ParseError
+
+exception UnmatchedCharacter(string, position, length=1)[source]
+Bases: problog.parser.ParseError
+
+class Factory[source]
+Bases: object
+
+Factory object for creating suitable objects from the parse tree.
+
+6.21. problog.program - Representation of Logic Programs
+Provides tools for loading logic programs.
+
+class LogicProgram(source_root='.', source_files=None, line_info=None, **extra_info)[source]
+Bases: problog.core.ProbLogObject
+
+add_clause(clause, scope=None)[source]
+Add a clause to the logic program.
+
+Parameters:	clause – add a clause
+add_fact(fact, scope=None)[source]
+Add a fact to the logic program.
+
+Parameters:	fact – add a fact
+classmethod create_from(src, force_copy=False, **extra)[source]
+Create a LogicProgram of the current class from another LogicProgram.
+
+Parameters:	
+src (LogicProgram) – logic program to convert
+force_copy (bool) – default False, If true, always create a copy of the original logic program.
+extra – additional arguments passed to all constructors and action functions
+Returns:	
+LogicProgram that is (externally) identical to given one
+
+Return type:	
+object of the class on which this method is invoked
+
+If the original LogicProgram already has the right class and force_copy is False, then the original program is returned.
+
+classmethod createFrom(src, force_copy=False, **extra)[source]
+Create a LogicProgram of the current class from another LogicProgram.
+
+Parameters:	
+src (LogicProgram) – logic program to convert
+force_copy (bool) – default False, If true, always create a copy of the original logic program.
+extra – additional arguments passed to all constructors and action functions
+Returns:	
+LogicProgram that is (externally) identical to given one
+
+Return type:	
+object of the class on which this method is invoked
+
+If the original LogicProgram already has the right class and force_copy is False, then the original program is returned.
+
+lineno(char, force_filename=False)[source]
+Transform character position to line:column format.
+
+Parameters:	
+char – character position
+force_filename – always add filename even for top-level file
+Returns:	
+line, column (or None if information is not available)
+
+class SimpleProgram[source]
+Bases: problog.program.LogicProgram
+
+LogicProgram implementation as a list of clauses.
+
+add_clause(clause, scope=None)[source]
+Add a clause to the logic program.
+
+Parameters:	clause – add a clause
+add_fact(fact, scope=None)[source]
+Add a fact to the logic program.
+
+Parameters:	fact – add a fact
+class PrologString(string, parser=None, factory=None, source_root='.', source_files=None, identifier=0)[source]
+Bases: problog.program.LogicProgram
+
+Read a logic program from a string of ProbLog code.
+
+add_clause(clause, scope=None)[source]
+Add a clause to the logic program.
+
+Parameters:	clause – add a clause
+add_fact(fact, scope=None)[source]
+Add a fact to the logic program.
+
+Parameters:	fact – add a fact
+class PrologFile(filename, parser=None, factory=None, identifier=0)[source]
+Bases: problog.program.PrologString
+
+LogicProgram implementation as a pointer to a Prolog file.
+
+Parameters:	
+filename (string) – filename of the Prolog file (optional)
+identifier – index of the file (in case of multiple files)
+add_clause(clause, scope=None)[source]
+Add a clause to the logic program.
+
+Parameters:	clause – add a clause
+add_fact(fact, scope=None)[source]
+Add a fact to the logic program.
+
+Parameters:	fact – add a fact
+class PrologFactory(identifier=0)[source]
+Bases: problog.parser.Factory
+
+Factory object for creating suitable objects from the parse tree.
+
+class ExtendedPrologFactory(identifier=0)[source]
+Bases: problog.program.PrologFactory
+
+Prolog with some extra syntactic sugar.
+
+Non-standard syntax: - Negative head literals [Meert and Vennekens, PGM 2014]: 0.5:: +a :- b.
+
+build_program(clauses)[source]
+Update functor f that appear as a negative head literal to f_p and :param clauses: :return:
+
+neg_head_literal_to_pos_literal(literal)[source]
+Translate a negated literal into a positive literal and remember the literal to update the complete program later (in build_program). :param literal: :return:
+
+build_probabilistic(operand1, operand2, location=None, **extra)[source]
+Detect probabilistic negated head literal and translate to positive literal :param operand1: :param operand2: :param location: :param extra: :return:
+
+build_clause(functor, operand1, operand2, location=None, **extra)[source]
+Detect deterministic head literal and translate to positive literal :param functor: :param operand1: :param operand2: :param location: :param extra: :return:
+
+DefaultPrologFactory
+alias of problog.program.ExtendedPrologFactory
+
+6.22. problog.setup - Installation tools
+Provides an installer for ProbLog dependencies.
+
+set_environment()[source]
+Updates local PATH and PYTHONPATH to include additional component directories.
+
+get_binary_paths()[source]
+Get a list of additional binary search paths.
+
+get_module_paths()[source]
+Get a list of additional module search paths.
+
+gather_info()[source]
+Collect info about the system and its installed software.
+
+6.23. problog.util - Useful utilities
+Provides useful utilities functions and classes.
+
+class ProbLogLogFormatter[source]
+Bases: logging.Formatter
+
+format(message)[source]
+Format the specified record as text.
+
+The record’s attribute dictionary is used as the operand to a string formatting operation which yields the returned string. Before formatting the dictionary, a couple of preparatory steps are carried out. The message attribute of the record is computed using LogRecord.getMessage(). If the formatting string uses the time (as determined by a call to usesTime(), formatTime() is called to format the event time. If there is exception information, it is formatted using formatException() and appended to the message.
+
+init_logger(verbose=None, name='problog', out=None)[source]
+Initialize default logger.
+
+Parameters:	
+verbose (int) – verbosity level (0: WARNING, 1: INFO, 2: DEBUG)
+name (str) – name of the logger (default: problog)
+Returns:	
+result of logging.getLogger(name)
+
+Return type:	
+logging.Logger
+
+class Timer(msg, output=None, logger='problog')[source]
+Bases: object
+
+Report timing information for a block of code. To be used as a with block.
+
+Parameters:	
+msg (str) – message to print
+output (file) – file object to write to (default: write to logger problog)
+start_timer(timeout=0)[source]
+Start a global timeout timer.
+
+Parameters:	timeout (int) – timeout in seconds
+stop_timer()[source]
+Stop the global timeout timer.
+
+subprocess_check_output(*popenargs, **kwargs)[source]
+Wrapper for subprocess.check_output that recursively kills subprocesses when Python is interrupted.
+
+Additionally expands executable name to full path.
+
+Parameters:	
+popenargs – positional arguments of subprocess.call
+kwargs – keyword arguments of subprocess.call
+Returns:	
+result of subprocess.call
+
+subprocess_check_call(*popenargs, **kwargs)[source]
+Wrapper for subprocess.check_call that recursively kills subprocesses when Python is interrupted.
+
+Additionally expands executable name to full path.
+
+Parameters:	
+popenargs – positional arguments of subprocess.call
+kwargs – keyword arguments of subprocess.call
+Returns:	
+result of subprocess.call
+
+subprocess_call(*popenargs, **kwargs)[source]
+Wrapper for subprocess.call that recursively kills subprocesses when Python is interrupted.
+
+Additionally expands executable name to full path.
+
+Parameters:	
+popenargs – positional arguments of subprocess.call
+kwargs – keyword arguments of subprocess.call
+Returns:	
+result of subprocess.call
+
+kill_proc_tree(process, including_parent=True)[source]
+Recursively kill a subprocess. Useful when the subprocess is a script. Requires psutil but silently fails when it is not present.
+
+Parameters:	
+process (subprocess.Popen) – process
+including_parent (bool) – also kill process itself (default: True)
+class OrderedSet(iterable=None)[source]
+Bases: collections.abc.MutableSet
+
+Provides an ordered version of a set which keeps elements in the order they are added.
+
+Parameters:	iterable (Sequence) – add elements from this iterable (default: None)
+add(key)[source]
+Add element.
+
+Parameters:	key – element to add
+discard(key)[source]
+Discard element.
+
+Parameters:	key – element to remove
+pop(last=True)[source]
+Remove and return first or last element.
+
+Parameters:	last – remove last element
+Returns:	last element
+mktempfile(suffix='')[source]
+Create a temporary file with the given name suffix.
+
+Parameters:	suffix (str) – extension of the file
+Returns:	name of the temporary file
+load_module(filename)[source]
+Load a Python module from a filename or qualified module name.
+
+If filename ends with .py, the module is loaded from the given file. Otherwise it is taken to be a module name reachable from the path.
+
+Example:
+
+Parameters:	filename (str) – location of the module
+Returns:	loaded module
+Return type:	module
+format_value(data, precision=8)[source]
+Pretty print a given value.
+
+Parameters:	
+data – data to format
+precision (int) – max. number of digits
+Returns:	
+pretty printed result
+
+Return type:	
+str
+
+format_tuple(data, precision=8, columnsep='\t')[source]
+Pretty print a given tuple (or single value).
+
+Parameters:	
+data – data to format
+precision (int) – max. number of digits
+columnsep (str) – column separator
+Returns:	
+pretty printed result
+
+Return type:	
+str
+
+format_dictionary(data, precision=8, keysep=':', columnsep='\t')[source]
+Pretty print a given dictionary.
+
+Parameters:	
+data (dict) – data to format
+precision (int) – max. number of digits
+keysep (str) – separator between key and value (default: ;)
+columnsep (str) – column separator (default: tab)
+Returns:	
+pretty printed result
+
+Return type:	
+str
+
+class UHeap(key=None)[source]
+Bases: object
+
+Updatable heap.
+
+Each element is represented as a pair (key, item). The operation pop() always returns the item with the smallest key. The operation push(item) either adds item (returns True) or updates its key (return False) A function for computing an item’s key can be passed.
+
+Parameters:	key – function for computing the sort key of an item
+push(item)[source]
+Add the item or update it’s key in case it already exists.
+
+Parameters:	item – item to add
+Returns:	True is item was not in the collection
+pop()[source]
+Removes and returns the element with the smallest key.
+
+Returns:	item with the smallest key
+pop_with_key()[source]
+Removes and returns the smallest element and its key.
+
+Returns:	smallest element (key, element)
+peek()[source]
+Returns the element with the smallest key without removing it.
+
+Returns:	item with the smallest key

@@ -1,0 +1,3 @@
+problog
+openai
+python-dotenv
