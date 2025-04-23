@@ -1,3 +1,8 @@
+DEPRECATED: I've decided (for the second time in 3 months) that everything being proposed here with logic engines can be done by pure LLMs (for complex use cases, LLMs with access to code execution). So this is just building an agent with an arbitrary handicap to only be able to do logic problems. 
+I originally got tempted by this idea because of the logical weakness of LLMs. But each month, they get better. I knew this the first time I decided not to do this project. This time around, I think I just got so excited about the use cases (detailed below in examples) that I forgot to zoom out for a second and realize I didn't need to build anything to do what I wanted with LLMS. Then, surprise surprise, I went to o3 and got a great tariff wargaming analysis.
+THIS IS UNNECESSARY. JUST USE AN LLM.
+(unless you need performance, cost effectiveness, determinism, or guarantees, but I don't need any of those at the moment)
+
 # CausalGraphTools
 
 A framework for modeling, analyzing, and visualizing complex causal systems with probabilistic logical inference and AI-enhanced rule generation.
