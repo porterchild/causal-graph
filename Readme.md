@@ -314,6 +314,14 @@ The system combines:
 - **Probabilistic analysis** for handling uncertainty
 - **Neural processing** for pattern recognition and natural language understanding
 
+## Design Philosophy: LLMs for Complexity
+
+A core principle guiding the development of CausalGraphTools is to leverage Large Language Models (LLMs) to manage complexity wherever possible, rather than building intricate, hand-coded logic or parsers. This approach aims to:
+
+- **Reduce the "knowledge acquisition bottleneck"**: By using LLMs to interpret natural language inputs and manage the knowledge base, we minimize the need for users to learn complex syntax or for developers to build sophisticated parsing mechanisms (for example, in the translation between natural language and Problog statements/queries).
+
+This means that in scenarios where complexity arises, our primary strategy is to refine the prompts and instructions given to the LLM, allowing the model to handle the intricacies of natural language and knowledge representation, rather than adding complexity to the Python codebase with elaborate parsing rules or state machines.
+
 ## Future Development
 
 Future versions will include:
