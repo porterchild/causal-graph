@@ -329,6 +329,73 @@ ProbLog Evidence:"""
         except Exception as e:
             print(f"Unexpected Error during ProbLog deductive inference: {e}")
             # print(f"Model causing error:\n{temp_model_string}") # Debugging
+            return None # Added return statement
+
+    def _translate_problog_result_to_nl(self, query_term: Term, probability: float | None) -> str:
+        """
+        Translates a ProbLog query result (term and probability) into a natural language explanation using an LLM.
+
+        Args:
+            query_term (Term): The ProbLog term that was queried.
+            probability (float | None): The calculated probability (or None if failed).
+
+        Returns:
+            str: A natural language explanation of the result.
+        """
+        if probability is None:
+            return f"I could not determine the probability for '{query_term}' due to an error or missing information."
+        elif probability == 0.0:
+             # Handle 0 probability explicitly, LLM might struggle otherwise
+             return f"Based on the current model, the probability of '{query_term}' is effectively zero (0%). This means it's considered impossible or undefined given the known facts and rules."
+        elif probability == 1.0:
+             # Handle 1.0 probability explicitly
+             return f"Based on the current model, '{query_term}' is considered certain (100% probability). This is likely due to it being stated as a definite fact or logically following from known facts."
+
+        prompt = f"""Explain the following ProbLog query result in simple, natural language.
+Focus on conveying the meaning of the probability.
+Output ONLY the natural language explanation. Do not include markdown formatting or conversational filler.
+
+Query Term: {query_term}
+Probability: {probability:.4f}
+
+Natural Language Explanation:"""
+        # Allow more tokens for a potentially longer explanation
+        explanation = self._get_llm_translation(prompt, max_tokens=100)
+
+        if explanation:
+            # Add a fallback prefix if the LLM fails or returns empty
+            return explanation
+        else:
+            # Fallback explanation if LLM fails
+            return f"The calculated probability for '{query_term}' is approximately {probability*100:.1f}%."
+
+
+    def query_deductive_nl_explained(self, nl_query: str) -> str:
+        """
+        Performs deductive inference based on a natural language query and returns
+        a natural language explanation of the result.
+
+        Args:
+            nl_query (str): The natural language query.
+
+        Returns:
+            str: A natural language explanation of the probability result.
+        """
+        query_term = self._translate_nl_query_to_term(nl_query)
+        if self.debug:
+            print(f"[DEBUG] NL Query (Explained): '{nl_query}'")
+            print(f"[DEBUG] ProbLog Term (Explained): '{query_term}'")
+
+        if not query_term:
+            return f"Sorry, I couldn't understand the query '{nl_query}' well enough to translate it into a ProbLog term."
+
+        # Reuse the existing query logic
+        probability = self.query_deductive_nl(nl_query) # Note: This re-translates, could optimize later
+
+        # Get the NL explanation
+        explanation = self._translate_problog_result_to_nl(query_term, probability)
+        return explanation
+
     def query_abductive_nl(self, nl_observation: str) -> dict[Term, float] | None:
         """
         Performs abductive inference based on a natural language observation.
@@ -361,6 +428,74 @@ ProbLog Evidence:"""
              pass
         # Return the result (which could be None if the helper failed)
         return posterior_probabilities
+
+    def get_model_string(self) -> str:
+        """Returns the current ProbLog model string."""
+        return self.model_string.strip()
+
+    def _translate_abduction_result_to_nl(self, observation_nl: str, posterior_probs: dict[Term, float] | None) -> str:
+        """
+        Translates an abduction result (posterior probabilities of causes) into a natural language explanation.
+
+        Args:
+            observation_nl (str): The original natural language observation.
+            posterior_probs (dict[Term, float] | None): Dictionary of cause Terms and their posterior probabilities.
+
+        Returns:
+            str: A natural language explanation of the likely causes.
+        """
+        if posterior_probs is None:
+            return f"I couldn't determine the likely causes for the observation: '{observation_nl}'. This might be due to translation errors or issues with the model."
+        if not posterior_probs:
+            return f"Based on the current model, there are no identified probabilistic causes that could explain the observation: '{observation_nl}'."
+
+        # Sort causes by probability, descending
+        sorted_causes = sorted(posterior_probs.items(), key=lambda item: item[1], reverse=True)
+
+        # Format the explanation using LLM
+        causes_str = "\n".join([f"- {term}: {prob*100:.1f}% probability" for term, prob in sorted_causes])
+
+        prompt = f"""Explain the following abductive reasoning result in simple, natural language.
+The user observed: "{observation_nl}"
+The analysis identified the following potential causes with their calculated posterior probabilities:
+{causes_str}
+
+Focus on explaining which causes are most likely given the observation.
+Output ONLY the natural language explanation. Do not include markdown formatting or conversational filler.
+
+Natural Language Explanation:"""
+
+        explanation = self._get_llm_translation(prompt, max_tokens=150) # Allow more tokens
+
+        if explanation:
+            return explanation
+        else:
+            # Fallback explanation
+            explanation_lines = [f"Given the observation '{observation_nl}', the most likely potential causes are:"]
+            for term, prob in sorted_causes:
+                explanation_lines.append(f"- '{term}' with approximately {prob*100:.1f}% probability.")
+            if not sorted_causes:
+                 explanation_lines.append("No specific causes were identified in the model.")
+            return "\n".join(explanation_lines)
+
+
+    def query_abductive_nl_explained(self, nl_observation: str) -> str:
+        """
+        Performs abductive inference based on a natural language observation and
+        returns a natural language explanation of the likely causes.
+
+        Args:
+            nl_observation (str): The natural language statement describing the observed evidence.
+
+        Returns:
+            str: A natural language explanation of the likely causes.
+        """
+        # Note: This re-translates the observation to evidence internally via query_abductive_nl
+        posterior_probs = self.query_abductive_nl(nl_observation)
+
+        # Get the NL explanation
+        explanation = self._translate_abduction_result_to_nl(nl_observation, posterior_probs)
+        return explanation
 
 
 # Example Usage (for testing purposes - requires OPENROUTER_API_KEY in .env)
